@@ -259,6 +259,7 @@ showForm() {
     this.audioOutro.play().catch(error => console.error("Error al reproducir el audio:", error));
     this.mode = '1';
     this.submode = 'opt1';
+    this.docs = [];
   }
 
   setupRecognition() {

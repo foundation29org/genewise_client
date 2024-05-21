@@ -1129,11 +1129,7 @@ async translateInverseSummary(msg): Promise<string> {
           }
 
           openFeedback(){
-            let questionnaire = 'ah7rg7N8';
-            if(this.lang == 'es'){
-              questionnaire = 'z6hgZFGs';
-            }
-            let url = 'https://davlv9v24on.typeform.com/to/'+questionnaire+'#uuid='+this.paramForm+'&role='+this.actualRole+'&mode='+this.submode
+            let url = 'https://surveys.hotjar.com/8c45b969-6087-4b58-82f3-cc496b881117'
             window.open(url, "_blank");
           }
 

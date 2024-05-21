@@ -47,7 +47,7 @@
         <div *ngIf="docs.length > 0">
             <div *ngIf="!loadedDocs">
                 <div class="mt-4 mx-auto center-elements" style="max-width: 40rem !important;">
-                    <em class="fa fa-spinner fa-spin fa-3x fa-fw pink"></em>
+                    <em class="fa fa-spinner fa-spin fa-3x fa-fw info"></em>
                     <p>{{'generics.Please wait' | translate }}</p>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                                                 <span *ngIf="doc.state!='done' && doc.state!='failed'">
                                                     <span *ngIf="doc.state=='uploading'">{{'messages.m1.1' | translate
                                                         }}</span>
-                                                    <em class="fa fa-spinner fa-spin fa-fw pink"></em>
+                                                    <em class="fa fa-spinner fa-spin fa-fw info"></em>
                                                 </span>
                                                 <span *ngIf="doc.state=='failed'">
                                                     <em class="fa fa-times fa-fw danger"></em>
@@ -221,7 +221,7 @@
                                 <div class="row" *ngIf="callingSummary">
                                     <div class="col-md-12">
                                         <span class="d-block mt-2 center-elements"><em
-                                                class="fa fa-spinner fa-spin fa-3x fa-fw pink"></em></span>
+                                                class="fa fa-spinner fa-spin fa-3x fa-fw info"></em></span>
                                     </div>
                                 </div>
                                 <div class="row" *ngIf="!callingSummary && summaryPatient==''">
@@ -405,7 +405,7 @@
                                     </div>
                                     <span *ngIf="preparingFile">
                                         <small class="d-block">{{'generics.Preparing to upload' | translate }}</small>
-                                        <i class="fa fa-spinner fa-spin fa-3x fa-fw pink"></i>
+                                        <i class="fa fa-spinner fa-spin fa-3x fa-fw info"></i>
                                     </span>
                                     <div class="chat-messages pt-2" *ngIf="callingOpenai" style="border-radius: 1rem;">
                                         <span class="response-message font-small-3"

@@ -268,6 +268,8 @@
                                                     translate }}</button>
                                                 <button class="btn btn-primary btn-sm ml-1"
                                                     (click)="download()">{{'generics.ExportData' | translate }}</button>
+                                                <button class="btn btn-primary btn-sm ml-1" (click)="showPanelTranslate(contentTranslate)">Translate</button>
+
                                             </div>
                                             <div class="custom-body text-left p-2">
                                                 <span [innerHTML]="summaryPatient | safe: 'html'"></span>
@@ -615,5 +617,58 @@
 
             </div>
         </div>
+    </div>
+</ng-template>
+<ng-template #contentTranslate id="contentTranslate" let-c="close" let-d="dismiss" appendTo="body">
+    <div class="modal-header" id="idHeader">
+        <div class="content-header text-left">
+            <h4 class="mb-0">Translate</h4>
+        </div>
+        <button type="button" class="close" aria-label="Close" (click)="closeModal();">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body content-wrapper p-2" id="idBody">
+       
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h5>Original Text</h5>
+                <div class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
+                    <span [innerHTML]="summaryPatient | safe: 'html'"></span>
+                </div>
+            </div>
+            <div class="col-md-6" *ngIf="translatedText !='' ">
+                <h5>Translated Text</h5>
+                <div *ngIf="!callingTranslate" class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
+                    <span [innerHTML]="translatedText | safe: 'html'"></span>
+                </div>
+                
+            </div>
+            <div class="col-md-6" *ngIf="translatedText =='' ">
+                <div *ngIf="!callingTranslate">
+                    <div class="form-group">
+                        <label for="languageSelect">Select Language</label>
+                        <select id="languageSelect" class="form-control" [(ngModel)]="selectedLanguage">
+                            <option *ngFor="let lang of allLangs" [value]="lang.name">
+                                {{ lang.name }} ({{ lang.nativeName }})
+                            </option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" (click)="translateText();">Translate</button>
+                </div>
+                <div *ngIf="callingTranslate" class="row">
+                    <span class="col-md-12 center-elements">
+                        <em class="fa fa-spinner fa-spin fa-3x fa-fw info"></em>
+                        <p>{{'generics.Please wait' | translate }}</p>
+                    </span>
+                </div>
+              
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal();">Close</button>
+        
     </div>
 </ng-template>

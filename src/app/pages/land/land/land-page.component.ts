@@ -7,6 +7,7 @@ import { ApiDx29ServerService } from 'app/shared/services/api-dx29-server.servic
 import { Subscription } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { NgbModal, NgbModalRef, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
+import { LangService } from 'app/shared/services/lang.service';
 import { EventsService } from 'app/shared/services/events.service';
 import { InsightsService } from 'app/shared/services/azureInsights.service';
 import Swal from 'sweetalert2';
@@ -22,7 +23,7 @@ import * as datos from './icons.json';
   selector: 'app-land',
   templateUrl: './land-page.component.html',
   styleUrls: ['./land-page.component.scss'],
-  providers: [ApiDx29ServerService, jsPDFService],
+  providers: [ApiDx29ServerService, jsPDFService, LangService],
   animations: [
     trigger('slideInOut', [
       transition(':enter', [
@@ -80,6 +81,9 @@ export class LandPageComponent implements OnInit, OnDestroy {
   countModeGod: number = 0;
   callingSummary: boolean = false;
   summaryPatient: string = '';
+  translatedText: string = '';
+  selectedLanguage: string = 'English';
+  callingTranslate: boolean = false;
   stepDisclaimer: number = 1;
   showPatientTypeButtons = false;
   myuuid: string = uuidv4();
@@ -111,8 +115,9 @@ export class LandPageComponent implements OnInit, OnDestroy {
   filteredEvents: any[];
   isOldestFirst = false;
   showFilters = false;
+  allLangs: any;
 
-  constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private cdr: ChangeDetectorRef) {
+  constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private cdr: ChangeDetectorRef, private langService: LangService) {
     this.screenWidth = window.innerWidth;
     if(sessionStorage.getItem('lang') == null){
       sessionStorage.setItem('lang', this.translate.store.currentLang);
@@ -1557,6 +1562,49 @@ async translateInverseSummary(msg): Promise<string> {
             Dr. Ana Gómez, Genetista
             Fecha: 10/05/2024`;
         }
+
+        showPanelTranslate(content) {
+          if (this.modalReference != undefined) {
+              this.modalReference.close();
+          }
+          this.loadAllLanguages();
+          let ngbModalOptions: NgbModalOptions = {
+              backdrop: 'static',
+              keyboard: false,
+              windowClass: 'ModalClass-xl'// xl, lg, sm
+          };
+          this.modalReference = this.modalService.open(content, ngbModalOptions);
+      }
+
+      loadAllLanguages() {
+        this.allLangs = [];
+        this.subscription.add( this.langService.getAllLangs()
+        .subscribe( (res : any) => {
+          this.allLangs=res;
+        }));
+    }
+
+    translateText(){
+      if(this.summaryPatient == ''){
+        this.toastr.error('', this.translate.instant("demo.No text to translate"));
+        return;
+      }
+      this.callingTranslate = true;
+      this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage, this.summaryPatient )
+        .subscribe((res2: any) => {
+          if (res2.text != undefined) {
+            res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
+            res2.text = res2.text.replace(/\\n\\n/g, '');
+            res2.text = res2.text.replace(/\n/g, '');
+            this.translatedText = res2.text;
+          }
+          this.callingTranslate = false;
+        }, (err) => {
+          console.log(err);
+          this.insightsService.trackException(err);
+          this.callingTranslate = false;
+        }));
+    }
         
 
 }

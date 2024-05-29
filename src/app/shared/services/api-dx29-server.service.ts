@@ -148,4 +148,18 @@ export class ApiDx29ServerService {
         );
       }
 
+      getIATranslation(lang, text){
+        var body = {lang:lang, text: text}
+        return this.http.post(environment.api+'/api/translation/ia', body).pipe(
+          map((res: any) => {
+            return res;
+          }),
+          catchError((err) => {
+            console.log(err);
+            this.insightsService.trackException(err);
+            return err;
+          })
+        );
+      }
+
 }

@@ -642,6 +642,10 @@
                 <div *ngIf="!callingTranslate" class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
                     <span [innerHTML]="translatedText | safe: 'html'"></span>
                 </div>
+                <span *ngIf="!callingTranslate" class="float-right pt-2">
+                    <button class="btn btn-primary btn-sm ml-1" (click)="changeLanguage()">Change language</button>
+                    <button class="btn btn-primary btn-sm ml-1" (click)="download2()">{{'generics.ExportData' | translate }}</button>
+                </span>
                 
             </div>
             <div class="col-md-6" *ngIf="translatedText =='' ">
@@ -668,7 +672,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModal();">Close</button>
+        <button type="button" class="btn btn-secondary" (click)="closeModalTranslate();">Close</button>
         
     </div>
 </ng-template>

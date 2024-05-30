@@ -1761,22 +1761,6 @@ async translateInverseSummary(msg): Promise<string> {
           console.log(err);
           this.callingTranslate = false;
       }));
-       
-        
-        /*this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, this.summaryPatient )
-        .subscribe((res2: any) => {
-          if (res2.text != undefined) {
-            res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
-            res2.text = res2.text.replace(/\\n\\n/g, '');
-            res2.text = res2.text.replace(/\n/g, '');
-            this.translatedText = res2.text;
-          }
-          this.callingTranslate = false;
-        }, (err) => {
-          console.log(err);
-          this.insightsService.trackException(err);
-          this.callingTranslate = false;
-        }));*/
       }else{
         var jsontestLangText = [{ "Text": this.summaryPatient  }]
         this.subscription.add(this.apiDx29ServerService.getDeepLTranslationInvert(this.selectedLanguage.code, jsontestLangText )
@@ -1795,6 +1779,30 @@ async translateInverseSummary(msg): Promise<string> {
           this.callingTranslate = false;
         }));
       }
+     
+    }
+
+    async translateTextIA(){
+      if(this.summaryPatient == ''){
+        this.toastr.error('', this.translate.instant("demo.No text to translate"));
+        return;
+      }
+      this.callingTranslate = true;
+
+      this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, this.summaryPatient )
+        .subscribe((res2: any) => {
+          if (res2.text != undefined) {
+            res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
+            res2.text = res2.text.replace(/\\n\\n/g, '');
+            res2.text = res2.text.replace(/\n/g, '');
+            this.translatedText = res2.text;
+          }
+          this.callingTranslate = false;
+        }, (err) => {
+          console.log(err);
+          this.insightsService.trackException(err);
+          this.callingTranslate = false;
+        }));
      
     }
 

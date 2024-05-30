@@ -1747,7 +1747,27 @@ async translateInverseSummary(msg): Promise<string> {
                       res2[0].translations[0].text = res2[0].translations[0].text.replace(/\\n\\n/g, '');
                       res2[0].translations[0].text = res2[0].translations[0].text.replace(/\n/g, '');
                     this.translatedText = res2[0].translations[0].text;
+                  }else{
+                    console.log(res2)
+                    //mostrar en un swal que no se pudo traducir, The target language is not valid. que pruebe con la opcion de traducir con IA
+                    Swal.fire({
+                      icon: 'error',
+                      title: this.translate.instant("demo.The target language is not valid. Try the option to translate with AI."),
+                      showCancelButton: false,
+                      showConfirmButton: true,
+                      allowOutsideClick: false
+                   })
+
                   }
+              }else{
+                console.log(res2)
+                Swal.fire({
+                  icon: 'error',
+                  title: this.translate.instant("demo.The target language is not valid. Try the option to translate with AI."),
+                  showCancelButton: false,
+                  showConfirmButton: true,
+                  allowOutsideClick: false
+               })
               }
               this.callingTranslate = false;
     

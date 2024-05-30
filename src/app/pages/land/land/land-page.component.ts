@@ -400,7 +400,6 @@ showForm() {
     this.medicalText = '';
     this.summaryDx29 = '';
     this.step = 1;
-    this.loadedDocs = false;
     this.originalContent = '';
     this.editedContent = '';
   }

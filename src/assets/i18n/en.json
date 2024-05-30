@@ -22,6 +22,7 @@
     "Summarise the transcript": "Summarise the transcript",
     "Written for": "Written for",
     "Adults": "Adults",
+    "Adolescents": "Adolescents",
     "Children": "Children",
     "New summary": "New summary",
     "Evaluate summary": "Evaluate summary",
@@ -31,7 +32,12 @@
     "Capture photo": "Capture photo",
     "I like it": "I like it",
     "Create report": "Create report",
-    "Use example text": "Use example text"
+    "Use example text": "Use example text",
+    "Original Text": "Original Text",
+    "Translated Text": "Translated Text",
+    "Change language": "Change language",
+    "Select Language": "Select Language",
+    "Edit summary": "Edit summary"
   },
   "timeline":{
    "Timeline": "Timeline",
@@ -482,6 +488,7 @@
     "For questions and other information": "For questions and other information:"
   },
   "generics":{
+    "Translate": "Translate",
     "Me": "Me",
     "The patient does not have any information yet": "The patient does not have any information yet",
     "Save all": "Save all",

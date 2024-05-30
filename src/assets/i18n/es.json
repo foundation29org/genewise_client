@@ -22,6 +22,7 @@
     "Summarise the transcript": "Resumir la transcripción",
     "Written for": "Escrito para",
     "Adults": "Adultos",
+    "Adolescents": "Adolescentes",
     "Children": "Niños",
     "New summary": "Nuevo resumen",
     "Evaluate summary": "Evaluar resumen",
@@ -31,7 +32,12 @@
     "Capture photo": "Capturar foto",
     "I like it": "Me gusta",
     "Create report": "Crear informe",
-    "Use example text": "Usar texto de ejemplo"
+    "Use example text": "Usar texto de ejemplo",
+    "Original Text": "Texto original",
+    "Translated Text": "Texto traducido",
+    "Change language": "Cambiar idioma",
+    "Select Language": "Seleccionar idioma",
+    "Edit summary": "Editar resumen"
    },
    "timeline":{
     "Timeline": "Línea de tiempo",
@@ -482,6 +488,7 @@
     "For questions and other information": "Para preguntas y otra información:"
   },
   "generics":{
+    "Translate": "Traducir",
     "Me": "Yo",
     "The patient does not have any information yet": "El paciente no tiene ninguna información todavía",
     "Save all": "Guardar todo",

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-
+declare let html2canvas: any;
 import { jsPDF } from "jspdf";
 
 @Injectable()
@@ -118,9 +118,135 @@ export class jsPDFService {
         doc.setTextColor(0, 0, 0);
     }
 
-    generateResultsPDF(summary, lang, qrCodeDataURL){
-        //create a copy of jsonContent
+    async generateResultsPDF(summary: string, lang: string, qrCodeDataURL: string | null): Promise<void> {
+        console.log(summary);
+        this.lang = lang;
+        const doc = new jsPDF();
+        const margin = 10;
+        const pageWidth = doc.internal.pageSize.getWidth() - margin * 2;
+        const pageHeight = doc.internal.pageSize.getHeight() - margin * 2;
+        const firstPageHeaderHeight = 35;
+        const otherPagesHeaderHeight = 10;
+        const footerHeight = 20;
+        let currentHeight = margin + firstPageHeaderHeight;
     
+        // Cabecera inicial
+        const img_logo = new Image();
+        img_logo.src = "assets/img/logo-lg-white.png";
+        doc.addImage(img_logo, 'PNG', 10, 17, 54, 15);
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        const actualDate = new Date();
+        const dateHeader = this.getFormatDate(actualDate);
+        this.writeDataHeader(doc, lang === 'es' ? 87 : 93, 5, dateHeader);
+    
+        // Añadir QR
+        const img_qr = new Image();
+        if (qrCodeDataURL == null) {
+            img_qr.src = "assets/img/elements/qr.png";
+            doc.addImage(img_qr, 'PNG', 160, 5, 32, 30);
+            doc.setFontSize(8);
+            doc.text('https://nav29.org', 164, 37);
+        } else {
+            img_qr.src = qrCodeDataURL;
+            doc.addImage(img_qr, 'PNG', 160, 5, 32, 30);
+            doc.setFontSize(8);
+            doc.text(this.translate.instant("pdf.Scan to rate the summary"), 152, 37);
+        }
+        doc.setFontSize(10);
+    
+        this.newHeatherAndFooter(doc);
+    
+        const element = document.createElement('div');
+        element.innerHTML = summary;
+        const images = await this.generateImagesFromHTML(element, pageWidth, pageHeight - firstPageHeaderHeight - footerHeight);
+        console.log(images);
+        let pageNumber = 1;
+    
+        for (const imgData of images) {
+            if (pageNumber > 1) {
+                doc.addPage();
+                this.newHeatherAndFooter(doc);
+                currentHeight = margin + otherPagesHeaderHeight;
+            }
+    
+            // Create a new Image object to get the actual width and height of the generated image
+            const img = new Image();
+            img.src = imgData;
+            await new Promise((resolve) => {
+                img.onload = () => {
+                    const imgHeight = (img.height * pageWidth) / img.width;
+                    doc.addImage(imgData, 'PNG', margin, currentHeight, pageWidth, imgHeight);
+                    currentHeight += imgHeight + 10;
+                    resolve(null);
+                };
+            });
+    
+            pageNumber++;
+        }
+    
+        // Ajustar la posición de writeAboutUs basado en la última posición actualHeight
+        currentHeight += 10; // Añade un pequeño margen antes de writeAboutUs
+        this.writeAboutUs(doc, currentHeight);
+    
+        const pageCount = doc.internal.pages.length; // Total Page Number
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.text(this.translate.instant("pdf.page") + ' ' + i + '/' + pageCount, 97, 290);
+        }
+    
+        const date = this.getDate();
+        doc.save('Nav29_Report_' + date + '.pdf');
+    }
+
+    private async generateImagesFromHTML(element: HTMLElement, pageWidth: number, pageHeight: number): Promise<string[]> {
+        const images: string[] = [];
+        const canvasWidth = 1024; // Ajusta según tu necesidad
+        const canvasHeight = Math.round((canvasWidth * (pageHeight-5)) / pageWidth); // Mantén la proporción
+    
+        document.body.appendChild(element); // Asegúrate de que el elemento esté en el DOM
+        
+        const totalHeight = element.scrollHeight;
+        let currentHeight = 0;
+    
+        while (currentHeight < totalHeight) {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            const ctx = canvas.getContext('2d');
+    
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+                try {
+                    await html2canvas(element, {
+                        canvas: canvas,
+                        width: canvasWidth,
+                        height: totalHeight,
+                        scrollX: 0,
+                        scrollY: -currentHeight,
+                        windowHeight: canvasHeight,
+                        useCORS: true,
+                    });
+    
+                    const imgData = canvas.toDataURL('image/png');
+                    images.push(imgData);
+                } catch (error) {
+                    console.error("Error generating image from HTML:", error);
+                    break;
+                }
+            }
+    
+            currentHeight += canvasHeight;
+        }
+    
+        document.body.removeChild(element); // Limpia el DOM
+        return images;
+    }
+
+    generateResultsPDF2(summary, lang, qrCodeDataURL){
+        //create a copy of jsonContent
+        console.log(summary)
         this.lang = lang;
         const doc = new jsPDF();
         var lineText = 0;

@@ -134,9 +134,23 @@ export class ApiDx29ServerService {
       );
     }
 
-    getTranslationSegmentsInvert(lang,segments){
-      var body = {lang:lang, segments: segments}
+    getTranslationSegmentsInvert(originlang, lang,segments){
+      var body = {originlang: originlang, lang:lang, segments: segments}
         return this.http.post(environment.api+'/api/translation/segments', body).pipe(
+          map((res: any) => {
+            return res;
+          }),
+          catchError((err) => {
+            console.log(err);
+            this.insightsService.trackException(err);
+            return err;
+          })
+        );
+      }
+
+      getIATranslation(lang, text){
+        var body = {lang:lang, text: text}
+        return this.http.post(environment.api+'/api/translation/ia', body).pipe(
           map((res: any) => {
             return res;
           }),

@@ -37,7 +37,8 @@
       "Translated Text": "Übersetzter Text",
       "Change language": "Sprache ändern",
       "Select Language": "Sprache auswählen",
-      "Edit summary": "Zusammenfassung bearbeiten"
+      "Edit summary": "Zusammenfassung bearbeiten",
+      "The target language is not valid. Try the option to translate with AI.": "Die Zielsprache ist nicht gültig. Versuchen Sie die Option, mit KI zu übersetzen."
     },
    "timeline":{
     "Timeline": "Zeitleiste",

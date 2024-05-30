@@ -37,7 +37,8 @@
     "Translated Text": "Translated Text",
     "Change language": "Change language",
     "Select Language": "Select Language",
-    "Edit summary": "Edit summary"
+    "Edit summary": "Edit summary",
+    "The target language is not valid. Try the option to translate with AI.": "The target language is not valid. Try the option to translate with AI."
   },
   "timeline":{
    "Timeline": "Timeline",

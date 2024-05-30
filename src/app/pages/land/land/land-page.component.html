@@ -231,29 +231,18 @@
                                     </div>
                                     <div class="col-md-12">
                                         <div class="center-elements">
-                                            <button class="mb-2 btn btn-primary btn-sm mr-1"
-                                                (click)="madeSummary('physician')">{{'demo.a physician' | translate
-                                                }}</button>
-                                            <button class="mb-2 btn ml-1" (click)="selectSubrole()"
-                                                [ngClass]="(showPatientTypeButtons)?'btn-secondary':'btn-primary'">{{'demo.a
-                                                patient' | translate }}</button>
-                                        </div>
-                                        <div *ngIf="showPatientTypeButtons" class="center-elements mt-3">
-                                            <div class="col-md-12">
-                                                <p class="text-bold-700 text-center">{{'demo.Written for' | translate }}
-                                                </p>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <button class="mb-2 btn btn-primary btn-sm ml-1"
+                                            <button class="mb-2 btn btn-primary btn-sm ml-1"
                                                     (click)="madeSummary('adult')">
                                                     {{ 'demo.Adults' | translate }}
                                                 </button>
                                                 <button class="mb-2 btn btn-primary btn-sm ml-1"
-                                                    (click)="madeSummary('young')">
+                                                    (click)="madeSummary('adolescent')">
+                                                    {{ 'demo.Adolescents' | translate }}
+                                                </button>
+                                                <button class="mb-2 btn btn-primary btn-sm ml-1"
+                                                    (click)="madeSummary('child')">
                                                     {{ 'demo.Children' | translate }}
                                                 </button>
-                                            </div>
-
                                         </div>
                                     </div>
                                 </div>
@@ -266,8 +255,8 @@
                                                 <button class="btn btn-primary btn-sm ml-1 mr-1"
                                                     (click)="openFeedback()" target="_blank">{{'demo.Evaluate summary' |
                                                     translate }}</button>
-                                                <button class="btn btn-primary btn-sm ml-1" (click)="showPanelTranslate(contentTranslate)">{{'generics.Translate' | translate }}</button>
-                                                <button class="btn btn-primary btn-sm ml-1" (click)="toggleEdit(showPanelEdit)">{{'generics.Edit' | translate }}</button>
+                                                <button class="btn btn-primary btn-sm ml-1 mr-1" (click)="showPanelTranslate(contentTranslate)">{{'generics.Translate' | translate }}</button>
+                                                <button class="btn btn-primary btn-sm ml-1 mr-1" (click)="toggleEdit(showPanelEdit)">{{'generics.Edit' | translate }}</button>
                                                 <button class="btn btn-primary btn-sm ml-1"
                                                 (click)="download()">{{'generics.ExportData' | translate }}</button>
                                             </div>

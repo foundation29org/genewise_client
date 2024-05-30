@@ -87,7 +87,6 @@ export class LandPageComponent implements OnInit, OnDestroy  {
   selectedLanguage: any = {code:"en",name:"English",nativeName:"English"};
   callingTranslate: boolean = false;
   stepDisclaimer: number = 1;
-  showPatientTypeButtons = false;
   myuuid: string = uuidv4();
   paramForm: string = null;
   actualRole: string = '';
@@ -962,10 +961,6 @@ showModeGod(){
   }
 }
 
-selectSubrole(){
-  this.showPatientTypeButtons = true;
-}
-
 madeSummary(role){
   this.timeline = [];
   this.originalEvents = [];
@@ -990,9 +985,6 @@ madeSummary(role){
     }
     
   this.actualRole = role;
-  if(role=='physician'){
-    this.showPatientTypeButtons = false;
-  }
   this.callingSummary = true;
   this.summaryPatient = '';
 
@@ -1252,7 +1244,7 @@ async translateInverseSummary(msg): Promise<string> {
             const qrCodeDataURL = await QRCode.toDataURL(url);
             console.log(this.summaryPatient)
             let tempSumary = this.summaryPatient.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF(tempSumary, this.translate.store.currentLang, qrCodeDataURL)
+            this.jsPDFService.generateResultsPDF2(tempSumary, this.translate.store.currentLang, qrCodeDataURL)
             /* let htmldemo={"text":"<div><br>  <h3>Resumen médico</h3><br>  <p>Los documentos que acaba de cargar son historiales médicos y ayudan a explicar su historial de salud, su estado actual y los tratamientos en curso. Este resumen está diseñado para ofrecerle una comprensión clara de su situación médica.</p><br>  <h4>Presentación del paciente</h4><br>  <p>El paciente es Sergio Isla Miranda, un varón de 14 años con un historial de afecciones médicas complejas, principalmente de naturaleza neurológica.</p><br>  <h4>Diagnósticos</h4><br>  <ul><br>    <li><strong>Epilepsia:</strong> Sergio padece epilepsia refractaria, concretamente Síndrome de Dravet, que es una forma grave de epilepsia de difícil tratamiento.</li><br>    <li><strong>Trastornos del desarrollo:</strong> Tiene un trastorno generalizado del desarrollo y un trastorno grave del lenguaje expresivo y comprensivo.</li><br>    <li><strong>Condiciones físicas:</strong> Sergio también tiene los pies muy arqueados (pies cavos), anemia ferropénica y una curvatura de la columna vertebral (escoliosis dorsolumbar).</li><br>  </ul><br>  <h4>Tratamiento y medicación</h4><br>  <ul><br>    <li><strong>Medicación:</strong> Sergio toma varios medicamentos, entre ellos Diacomit, Depakine, Noiafren y Fenfluramina para controlar su epilepsia.</li><br>    <li><strong>Suplementos:</strong> También toma suplementos de hierro para tratar su anemia.</li><br>    <li><strong>Terapias:</strong> Participa en fisioterapia, logopedia y educación física adaptada para favorecer su desarrollo y su salud física.</li><br>  </ul><br>  <h4>Otros</h4><br>  <ul><br>    <li>Sergio ha sufrido estados epilépticos, que son ataques prolongados que requieren atención médica inmediata.</li><br>    <li>Tiene una mutación en el gen SCN1A, que está asociada a su epilepsia.</li><br>    <li>Su plan de tratamiento se sigue de cerca y se ajusta según sea necesario para controlar su enfermedad.</li><br>    <li>Sergio requiere atención y seguimiento continuos debido a la gravedad de su epilepsia, que puede incluir emergencias potencialmente mortales como una parada cardiaca.</li><br>  </ul><br>  <p>Es importante que Sergio y sus cuidadores mantengan una comunicación abierta con los profesionales sanitarios para garantizar el mejor tratamiento posible de su enfermedad.</p><br></div>"};
             htmldemo.text = htmldemo.text.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
             this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.store.currentLang, qrCodeDataURL)*/
@@ -1290,7 +1282,6 @@ async translateInverseSummary(msg): Promise<string> {
 
           newSummary(){
             this.summaryPatient = '';
-            this.showPatientTypeButtons = false;
           }
 
           getLiteral(literal) {
@@ -1743,7 +1734,36 @@ async translateInverseSummary(msg): Promise<string> {
       this.callingTranslate = true;
       var deepl_code = await this.getDeeplCode(this.selectedLanguage.code);
       if (deepl_code == null) {
-        this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, this.summaryPatient )
+        var testLangText = this.summaryPatient .substr(0, 4000)
+        this.subscription.add(this.apiDx29ServerService.getDetectLanguage(testLangText)
+        .subscribe((res: any) => {
+          let jsontestLangText = [{ "Text": this.summaryPatient }]
+          this.subscription.add(this.apiDx29ServerService.getTranslationSegmentsInvert(res[0].language, this.selectedLanguage.code,jsontestLangText)
+          .subscribe( (res2 : any) => {
+              
+              if (res2[0] != undefined) {
+                  if (res2[0].translations[0] != undefined) {
+                      res2[0].translations[0].text = res2[0].translations[0].text.replace(/^```html\n|\n```$/g, '');
+                      res2[0].translations[0].text = res2[0].translations[0].text.replace(/\\n\\n/g, '');
+                      res2[0].translations[0].text = res2[0].translations[0].text.replace(/\n/g, '');
+                    this.translatedText = res2[0].translations[0].text;
+                  }
+              }
+              this.callingTranslate = false;
+    
+          }, (err) => {
+            console.log(err);
+            this.insightsService.trackException(err);
+            this.callingTranslate = false;
+          }));
+        }, (err) => {
+          this.insightsService.trackException(err);
+          console.log(err);
+          this.callingTranslate = false;
+      }));
+       
+        
+        /*this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, this.summaryPatient )
         .subscribe((res2: any) => {
           if (res2.text != undefined) {
             res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
@@ -1756,7 +1776,7 @@ async translateInverseSummary(msg): Promise<string> {
           console.log(err);
           this.insightsService.trackException(err);
           this.callingTranslate = false;
-        }));
+        }));*/
       }else{
         var jsontestLangText = [{ "Text": this.summaryPatient  }]
         this.subscription.add(this.apiDx29ServerService.getDeepLTranslationInvert(this.selectedLanguage.code, jsontestLangText )

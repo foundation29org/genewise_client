@@ -31,7 +31,12 @@
       "Capture photo": "Foto aufnehmen",
       "I like it": "Ich mag es",
       "Create report": "Bericht erstellen",
-      "Use example text": "Beispieltext verwenden"
+      "Use example text": "Beispieltext verwenden",
+      "Original Text": "Originaltext",
+      "Translated Text": "Übersetzter Text",
+      "Change language": "Sprache ändern",
+      "Select Language": "Sprache auswählen",
+      "Edit summary": "Zusammenfassung bearbeiten"
     },
    "timeline":{
     "Timeline": "Zeitleiste",
@@ -482,6 +487,7 @@
        "For questions and other information":"Für Fragen und weitere Informationen:"
     },
     "generics":{
+      "Translate":"Übersetzen",
       "Me": "Ich",
       "The patient does not have any information yet":"Der Patient hat noch keine Informationen",
       "Save all":"Alles speichern",

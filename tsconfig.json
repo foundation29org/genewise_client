@@ -18,7 +18,7 @@
       "es2016",
       "dom"
     ],
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "resolveJsonModule": true
   },
   "angularCompilerOptions": {

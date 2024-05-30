@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, TemplateRef, NgZone, ChangeDetectorRef  } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, TemplateRef, NgZone, ChangeDetectorRef  } from '@angular/core';
 import { trigger, transition, animate } from '@angular/animations';
 import { style } from '@angular/animations';
 import { TranslateService } from '@ngx-translate/core';
@@ -14,10 +14,12 @@ import Swal from 'sweetalert2';
 import { environment } from 'environments/environment';
 import { Clipboard } from "@angular/cdk/clipboard"
 import { jsPDFService } from 'app/shared/services/jsPDF.service'
+import { jsPDF } from "jspdf";
 import * as QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 declare var webkitSpeechRecognition: any;
 import * as datos from './icons.json';
+declare let html2canvas: any;
 
 @Component({
   selector: 'app-land',
@@ -48,7 +50,7 @@ import * as datos from './icons.json';
 
 
 
-export class LandPageComponent implements OnInit, OnDestroy {
+export class LandPageComponent implements OnInit, OnDestroy  {
 
   private subscription: Subscription = new Subscription();
   loadedDocs: boolean = false;
@@ -82,7 +84,7 @@ export class LandPageComponent implements OnInit, OnDestroy {
   callingSummary: boolean = false;
   summaryPatient: string = '';
   translatedText: string = '';
-  selectedLanguage: string = 'English';
+  selectedLanguage: any = {code:"en",name:"English",nativeName:"English"};
   callingTranslate: boolean = false;
   stepDisclaimer: number = 1;
   showPatientTypeButtons = false;
@@ -116,6 +118,127 @@ export class LandPageComponent implements OnInit, OnDestroy {
   isOldestFirst = false;
   showFilters = false;
   allLangs: any;
+
+  isEditable = false;
+  originalContent: string;
+  editedContent: string;
+  initialized = false;
+  @ViewChild('showPanelEdit') showPanelEdit: TemplateRef<any>;
+  @ViewChild('editableDiv') editableDiv: ElementRef;
+  langDict = {
+    "af": null,
+    "sq": null,
+    "am": null,
+    "ar": null,
+    "hy": null,
+    "as": null,
+    "az": null,
+    "bn": null,
+    "ba": null,
+    "eu": null,
+    "bs": null,
+    "bg": "BG",
+    "yue": null,
+    "ca": null,
+    "lzh": null,
+    "zh-Hans": "ZH",
+    "zh-Hant": "ZH",
+    "hr": null,
+    "cs": "CS",
+    "da": "DA",
+    "prs": null,
+    "dv": null,
+    "nl": "NL",
+    "en": "EN-US",
+    "et": "ET",
+    "fo": null,
+    "fj": null,
+    "fil": null,
+    "fi": "FI",
+    "fr": "FR",
+    "fr-ca": null,
+    "gl": null,
+    "ka": null,
+    "de": "DE",
+    "el": "EL",
+    "gu": null,
+    "ht": null,
+    "he": null,
+    "hi": null,
+    "mww": null,
+    "hu": "HU",
+    "is": null,
+    "id": "ID",
+    "ikt": null,
+    "iu": null,
+    "iu-Latn": null,
+    "ga": null,
+    "it": "IT",
+    "ja": "JA",
+    "kn": null,
+    "kk": null,
+    "km": null,
+    "tlh-Latn": null,
+    "tlh-Piqd": null,
+    "ko": "KO",
+    "ku": null,
+    "kmr": null,
+    "ky": null,
+    "lo": null,
+    "lv": "LV",
+    "lt": "LT",
+    "mk": null,
+    "mg": null,
+    "ms": null,
+    "ml": null,
+    "mt": null,
+    "mi": null,
+    "mr": null,
+    "mn-Cyrl": null,
+    "mn-Mong": null,
+    "my": null,
+    "ne": null,
+    "nb": "NB",
+    "or": null,
+    "ps": null,
+    "fa": null,
+    "pl": "PL",
+    "pt": "pt-PT",
+    "pt-pt": null,
+    "pa": null,
+    "otq": null,
+    "ro": "RO",
+    "ru": "RU",
+    "sm": null,
+    "sr-Cyrl": null,
+    "sr-Latn": null,
+    "sk": "SK",
+    "sl": "SL",
+    "so": null,
+    "es": "ES",
+    "sw": null,
+    "sv": "SV",
+    "ty": null,
+    "ta": null,
+    "tt": null,
+    "te": null,
+    "th": null,
+    "bo": null,
+    "ti": null,
+    "to": null,
+    "tr": "TR",
+    "tk": null,
+    "uk": "UK",
+    "hsb": null,
+    "ur": null,
+    "ug": null,
+    "uz": null,
+    "vi": null,
+    "cy": null,
+    "yua": null,
+    "zu": null
+};
+
 
   constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private cdr: ChangeDetectorRef, private langService: LangService) {
     this.screenWidth = window.innerWidth;
@@ -182,8 +305,9 @@ export class LandPageComponent implements OnInit, OnDestroy {
     ];
     this.originalEvents = this.timeline;
     this.filterEvents();*/
-
   }
+
+ 
 
   showDisclaimer() {
     console.log(localStorage.getItem('hideDisclaimerlite'))
@@ -1118,6 +1242,7 @@ async translateInverseSummary(msg): Promise<string> {
         
           }
 
+          //this.summaryPatient= '<div><h3>ملخص المعلومات الجينية</h3><p>المعلومات الجينية التي قمت بتحميلها تشكل تقريراً جينياً وتساعد في شرح الأسباب الجينية المحتملة لحالتك الصحية.</p><p>المريض: خوان بيريز</p><p>يحدد هذا التقرير الطفرات الجينية الخاصة التي قد تكون مرتبطة بمرضك، وهو مرض عضلة القلب. إليك ملخص لأهم النتائج:</p><ul><li><strong>الجين TTN:</strong> طفرة حذف (c.80248_80251del) مصنفة كمرضية. تؤثر هذه الطفرة على وظيفة الجين، مما يؤدي إلى بروتين مقطوع. الطفرات في TTN مرتبطة بمرض عضلة القلب المتوسع السائد الوراثي.</li><li><strong>الجين MYH7:</strong> طفرة بلا معنى (c.742G&gt;A) مصنفة كمحتملة الضرر. تؤثر هذه الطفرة على جزء حيوي من الجين، وهو مهم لوظيفة عضلة القلب. الطفرات في MYH7 مرتبطة بأشكال مختلفة من أمراض عضلة القلب.</li><li><strong>الجين LMNA:</strong> طفرة بلا معنى (c.1588C&gt;T) ذات معنى غير مؤكد. تقع هذه الطفرة في منطقة حاسمة من الجين، والتي تلعب دوراً في الحفاظ على بنية نواة الخلية. قد تسبب الطفرات في LMNA أمراض عضلة القلب والضمور العضلي، لكن التأثير الدقيق لهذه الطفرة المحددة لا يزال غير واضح.</li></ul><p><strong>توصيات أخرى:</strong></p><ul><li>التقييم السريري: يُوصى بإجراء تقييم سريري مفصل لأفراد عائلتك لتحديد الحاملين المحتملين لهذه الطفرات الجينية.</li><li>الاستشارة الجينية: يُقترح أن تتلقى أنت وعائلتك استشارة جينية لمناقشة هذه النتائج وتداعياتها.</li><li>المتابعة الطبية: يُنصح بمتابعة منتظمة مع أخصائي أمراض القلب المتخصص في الأمراض الجينية.</li></ul><p>تهدف هذه المعلومات إلى مساعدتك على فهم حالتك الجينية بشكل أفضل وتسهيل المحادثات المستنيرة مع مقدمي الرعاية الصحية الخاصين بك.</p></div><output>{ "تقنية_جينية": "الإكسوم", "الطفرات_المرضية": true, "قائمة_الطفرات_المرضية": [ {"طفرة": "c.80248_80251del", "تاريخ": "2024-05-10"} ], "التراث_الجيني": "السائد الوراثي الجسمي", "تأكيد_الاختبارات_الأبوية": false}</output>'
           async download(){
             let questionnaire = 'ah7rg7N8';
             if(this.lang == 'es'){
@@ -1138,8 +1263,21 @@ async translateInverseSummary(msg): Promise<string> {
             let url = 'https://davlv9v24on.typeform.com/to/'+questionnaire+'#uuid='+this.paramForm+'&role='+this.actualRole+'&mode='+this.submode
             const qrCodeDataURL = await QRCode.toDataURL(url);
             console.log(this.translatedText)
-            let tempSumary = this.translatedText.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF(tempSumary, 'en', qrCodeDataURL)
+            /*let tempSumary = this.translatedText.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');*/
+            let test2 = '<div><h3>مقدمة التقرير</h3><p>المعلومات الجينية التي قمت بتحميلها تمثل تقرير تحليل جيني وتساعد في تفسير الأسباب الجينية المحتملة لحالتك الصحية.</p></div><div><h3>التقنية الجينية</h3><p>لتحليلك، استخدمنا طريقة تعرف بتسلسل الإكسوم. هذه الطريقة تركز على أجزاء الحمض النووي الخاص بك التي تحتوي على التعليمات لصنع البروتينات، وهي مكونات أساسية لجسمك. على الرغم من أن الإكسوم يشكل جزءًا صغيرًا فقط من الحمض النووي الكلي لديك، إلا أنه يحتوي على معظم التغيرات الجينية التي تسبب الأمراض. من خلال التركيز على هذه المنطقة الحرجة، يمكننا تحديد العوامل الجينية المحتملة التي قد تؤثر على صحتك بفعالية.</p></div><br/><div><h3>المعلومات الجينية</h3><p>يوفر هذا التقرير تحليلًا لمعلوماتك الجينية لتحديد أي تغيرات قد تكون مرتبطة بحالتك الصحية، مع التركيز بشكل خاص على الجينات المرتبطة بأمراض عضلة القلب.</p><p><strong>المريض:</strong> خوان بيريز</p><p>تاريخ <strong>الميلاد</strong>: 15/03/1980</p><p><strong>التغيرات الجينية الهامة المحددة:</strong></p><ul><li><strong>جين TTN:</strong> تغير بالحذف (c.80248_80251del) مصنف كمرضي. هذا التغير يسبب تغييرًا في الجين، مما يؤدي إلى بروتين مقطوع. الطفرات في جين TTN مرتبطة بمرض توسع عضلة القلب، الذي قد يؤثر على وظيفة القلب.</li><li><strong>جين MYH7:</strong> تغير بلا معنى (c.742G&gt;A) مصنف كمحتمل مرضي. هذا التغير يعدل جزءًا محافظًا جدًا من الجين، وهو مهم لوظيفة عضلة القلب. الطفرات في جين MYH7 مرتبطة بعدة أشكال من أمراض عضلة القلب.</li><li><strong>جين LMNA:</strong> تغير بلا معنى (c.1588C&gt;T) ذو معنى غير مؤكد. هذا التغير يقع في منطقة حرجة من الجين، التي تشارك في بنية نواة الخلية. الطفرات في جين LMNA يمكن أن تسبب مجموعة من الأمراض، بما في ذلك أمراض عضلة القلب والضمور العضلي، لكن التأثير الدقيق لهذا التغير المحدد لا يزال غير واضح.</li></ul><p><strong>الحالات المرتبطة:</strong> من المحتمل أن تكون التغيرات المحددة في جينات TTN و MYH7 مسؤولة عن مرض توسع عضلة القلب الملاحظ فيك. أهمية التغير في جين LMNA لا تزال غير مؤكدة وتتطلب مزيدًا من البحث.</p></div><div><h3>التغيرات الجينية المرضية</h3><p>خلال تحليل مادتك الجينية، حددنا تغيرات في الحمض النووي الخاص بك تعرف بالتغيرات الجينية المرضية. هذه التغيرات قد ارتبطت سابقًا بمشاكل صحية محددة. ومع ذلك، من المهم أن تأخذ في الاعتبار أن وجود تغير جيني مرضي لا يعني بالضرورة أنك ستطور الحالة المرتبطة به، حيث يمكن لعوامل جينية وبيئية أخرى أن تؤثر على النتيجة. سيعمل مقدم الرعاية الصحية الخاص بك معك لتقييم مخاطرك الفردية ومناقشة استراتيجيات الإدارة المناسبة.</p></div><br/><div><h3>التراث الجيني</h3><p>وفقًا لنتائجك، يتبع التغير الجيني المحدد نمطًا من الوراثة السائدة الجسمية. هذا يعني أنه يكفي وجود نسخة واحدة من الجين المتغير لامتلاك الصفة أو الحالة المرتبطة بها. إذا كنت تعاني من مرض جسمي سائد، فإن كل طفل من أطفالك لديه فرصة بنسبة 50% لوراثته منك. بعض الأمثلة المعروفة للحالات التي تتبع هذا النمط هي مرض هنتنغتون والتقزم الغضروفي.</p></div><br/><div><h3>معلومات إضافية</h3><p><strong>التوصيات:</strong></p><ul><li>تقييم سريري لأفراد عائلتك لتحديد الحاملين المحتملين للتغيرات الجينية المرضية.</li><li>الاستشارة الجينية لك ولعائلتك لمناقشة النتائج وتداعياتها.</li><li>المتابعة الدورية مع أخصائي أمراض القلب المتخصص في الأمراض الجينية القلبية.</li></ul></div><div><h3>مقدمة التقرير</h3><p>المعلومات الجينية التي قمت بتحميلها تمثل تقرير تحليل جيني وتساعد في تفسير الأسباب الجينية المحتملة لحالتك الصحية.</p></div><div><h3>التقنية الجينية</h3><p>لتحليلك، استخدمنا طريقة تعرف بتسلسل الإكسوم. هذه الطريقة تركز على أجزاء الحمض النووي الخاص بك التي تحتوي على التعليمات لصنع البروتينات، وهي مكونات أساسية لجسمك. على الرغم من أن الإكسوم يشكل جزءًا صغيرًا فقط من الحمض النووي الكلي لديك، إلا أنه يحتوي على معظم التغيرات الجينية التي تسبب الأمراض. من خلال التركيز على هذه المنطقة الحرجة، يمكننا تحديد العوامل الجينية المحتملة التي قد تؤثر على صحتك بفعالية.</p></div><br/><div><h3>المعلومات الجينية</h3><p>يوفر هذا التقرير تحليلًا لمعلوماتك الجينية لتحديد أي تغيرات قد تكون مرتبطة بحالتك الصحية، مع التركيز بشكل خاص على الجينات المرتبطة بأمراض عضلة القلب.</p><p><strong>المريض:</strong> خوان بيريز</p><p>تاريخ <strong>الميلاد</strong>: 15/03/1980</p><p><strong>التغيرات الجينية الهامة المحددة:</strong></p><ul><li><strong>جين TTN:</strong> تغير بالحذف (c.80248_80251del) مصنف كمرضي. هذا التغير يسبب تغييرًا في الجين، مما يؤدي إلى بروتين مقطوع. الطفرات في جين TTN مرتبطة بمرض توسع عضلة القلب، الذي قد يؤثر على وظيفة القلب.</li><li><strong>جين MYH7:</strong> تغير بلا معنى (c.742G&gt;A) مصنف كمحتمل مرضي. هذا التغير يعدل جزءًا محافظًا جدًا من الجين، وهو مهم لوظيفة عضلة القلب. الطفرات في جين MYH7 مرتبطة بعدة أشكال من أمراض عضلة القلب.</li><li><strong>جين LMNA:</strong> تغير بلا معنى (c.1588C&gt;T) ذو معنى غير مؤكد. هذا التغير يقع في منطقة حرجة من الجين، التي تشارك في بنية نواة الخلية. الطفرات في جين LMNA يمكن أن تسبب مجموعة من الأمراض، بما في ذلك أمراض عضلة القلب والضمور العضلي، لكن التأثير الدقيق لهذا التغير المحدد لا يزال غير واضح.</li></ul><p><strong>الحالات المرتبطة:</strong> من المحتمل أن تكون التغيرات المحددة في جينات TTN و MYH7 مسؤولة عن مرض توسع عضلة القلب الملاحظ فيك. أهمية التغير في جين LMNA لا تزال غير مؤكدة وتتطلب مزيدًا من البحث.</p></div><div><h3>التغيرات الجينية المرضية</h3><p>خلال تحليل مادتك الجينية، حددنا تغيرات في الحمض النووي الخاص بك تعرف بالتغيرات الجينية المرضية. هذه التغيرات قد ارتبطت سابقًا بمشاكل صحية محددة. ومع ذلك، من المهم أن تأخذ في الاعتبار أن وجود تغير جيني مرضي لا يعني بالضرورة أنك ستطور الحالة المرتبطة به، حيث يمكن لعوامل جينية وبيئية أخرى أن تؤثر على النتيجة. سيعمل مقدم الرعاية الصحية الخاص بك معك لتقييم مخاطرك الفردية ومناقشة استراتيجيات الإدارة المناسبة.</p></div><br/><div><h3>التراث الجيني</h3><p>وفقًا لنتائجك، يتبع التغير الجيني المحدد نمطًا من الوراثة السائدة الجسمية. هذا يعني أنه يكفي وجود نسخة واحدة من الجين المتغير لامتلاك الصفة أو الحالة المرتبطة بها. إذا كنت تعاني من مرض جسمي سائد، فإن كل طفل من أطفالك لديه فرصة بنسبة 50% لوراثته منك. بعض الأمثلة المعروفة للحالات التي تتبع هذا النمط هي مرض هنتنغتون والتقزم الغضروفي.</p></div><br/><div><h3>معلومات إضافية</h3><p><strong>التوصيات:</strong></p><ul><li>تقييم سريري لأفراد عائلتك لتحديد الحاملين المحتملين للتغيرات الجينية المرضية.</li><li>الاستشارة الجينية لك ولعائلتك لمناقشة النتائج وتداعياتها.</li><li>المتابعة الدورية مع أخصائي أمراض القلب المتخصص في الأمراض الجينية القلبية.</li></ul></div><div><h3>مقدمة التقرير</h3><p>المعلومات الجينية التي قمت بتحميلها تمثل تقرير تحليل جيني وتساعد في تفسير الأسباب الجينية المحتملة لحالتك الصحية.</p></div><div><h3>التقنية الجينية</h3><p>لتحليلك، استخدمنا طريقة تعرف بتسلسل الإكسوم. هذه الطريقة تركز على أجزاء الحمض النووي الخاص بك التي تحتوي على التعليمات لصنع البروتينات، وهي مكونات أساسية لجسمك. على الرغم من أن الإكسوم يشكل جزءًا صغيرًا فقط من الحمض النووي الكلي لديك، إلا أنه يحتوي على معظم التغيرات الجينية التي تسبب الأمراض. من خلال التركيز على هذه المنطقة الحرجة، يمكننا تحديد العوامل الجينية المحتملة التي قد تؤثر على صحتك بفعالية.</p></div><br/><div><h3>المعلومات الجينية</h3><p>يوفر هذا التقرير تحليلًا لمعلوماتك الجينية لتحديد أي تغيرات قد تكون مرتبطة بحالتك الصحية، مع التركيز بشكل خاص على الجينات المرتبطة بأمراض عضلة القلب.</p><p><strong>المريض:</strong> خوان بيريز</p><p>تاريخ <strong>الميلاد</strong>: 15/03/1980</p><p><strong>التغيرات الجينية الهامة المحددة:</strong></p><ul><li><strong>جين TTN:</strong> تغير بالحذف (c.80248_80251del) مصنف كمرضي. هذا التغير يسبب تغييرًا في الجين، مما يؤدي إلى بروتين مقطوع. الطفرات في جين TTN مرتبطة بمرض توسع عضلة القلب، الذي قد يؤثر على وظيفة القلب.</li><li><strong>جين MYH7:</strong> تغير بلا معنى (c.742G&gt;A) مصنف كمحتمل مرضي. هذا التغير يعدل جزءًا محافظًا جدًا من الجين، وهو مهم لوظيفة عضلة القلب. الطفرات في جين MYH7 مرتبطة بعدة أشكال من أمراض عضلة القلب.</li><li><strong>جين LMNA:</strong> تغير بلا معنى (c.1588C&gt;T) ذو معنى غير مؤكد. هذا التغير يقع في منطقة حرجة من الجين، التي تشارك في بنية نواة الخلية. الطفرات في جين LMNA يمكن أن تسبب مجموعة من الأمراض، بما في ذلك أمراض عضلة القلب والضمور العضلي، لكن التأثير الدقيق لهذا التغير المحدد لا يزال غير واضح.</li></ul><p><strong>الحالات المرتبطة:</strong> من المحتمل أن تكون التغيرات المحددة في جينات TTN و MYH7 مسؤولة عن مرض توسع عضلة القلب الملاحظ فيك. أهمية التغير في جين LMNA لا تزال غير مؤكدة وتتطلب مزيدًا من البحث.</p></div><div><h3>التغيرات الجينية المرضية</h3><p>خلال تحليل مادتك الجينية، حددنا تغيرات في الحمض النووي الخاص بك تعرف بالتغيرات الجينية المرضية. هذه التغيرات قد ارتبطت سابقًا بمشاكل صحية محددة. ومع ذلك، من المهم أن تأخذ في الاعتبار أن وجود تغير جيني مرضي لا يعني بالضرورة أنك ستطور الحالة المرتبطة به، حيث يمكن لعوامل جينية وبيئية أخرى أن تؤثر على النتيجة. سيعمل مقدم الرعاية الصحية الخاص بك معك لتقييم مخاطرك الفردية ومناقشة استراتيجيات الإدارة المناسبة.</p></div><br/><div><h3>التراث الجيني</h3><p>وفقًا لنتائجك، يتبع التغير الجيني المحدد نمطًا من الوراثة السائدة الجسمية. هذا يعني أنه يكفي وجود نسخة واحدة من الجين المتغير لامتلاك الصفة أو الحالة المرتبطة بها. إذا كنت تعاني من مرض جسمي سائد، فإن كل طفل من أطفالك لديه فرصة بنسبة 50% لوراثته منك. بعض الأمثلة المعروفة للحالات التي تتبع هذا النمط هي مرض هنتنغتون والتقزم الغضروفي.</p></div><br/><div><h3>معلومات إضافية</h3><p><strong>التوصيات:</strong></p><ul><li>تقييم سريري لأفراد عائلتك لتحديد الحاملين المحتملين للتغيرات الجينية المرضية.</li><li>الاستشارة الجينية لك ولعائلتك لمناقشة النتائج وتداعياتها.</li><li>المتابعة الدورية مع أخصائي أمراض القلب المتخصص في الأمراض الجينية القلبية.</li></ul></div><div><h3>مقدمة التقرير</h3><p>المعلومات الجينية التي قمت بتحميلها تمثل تقرير تحليل جيني وتساعد في تفسير الأسباب الجينية المحتملة لحالتك الصحية.</p></div><div><h3>التقنية الجينية</h3><p>لتحليلك، استخدمنا طريقة تعرف بتسلسل الإكسوم. هذه الطريقة تركز على أجزاء الحمض النووي الخاص بك التي تحتوي على التعليمات لصنع البروتينات، وهي مكونات أساسية لجسمك. على الرغم من أن الإكسوم يشكل جزءًا صغيرًا فقط من الحمض النووي الكلي لديك، إلا أنه يحتوي على معظم التغيرات الجينية التي تسبب الأمراض. من خلال التركيز على هذه المنطقة الحرجة، يمكننا تحديد العوامل الجينية المحتملة التي قد تؤثر على صحتك بفعالية.</p></div><br/><div><h3>المعلومات الجينية</h3><p>يوفر هذا التقرير تحليلًا لمعلوماتك الجينية لتحديد أي تغيرات قد تكون مرتبطة بحالتك الصحية، مع التركيز بشكل خاص على الجينات المرتبطة بأمراض عضلة القلب.</p><p><strong>المريض:</strong> خوان بيريز</p><p>تاريخ <strong>الميلاد</strong>: 15/03/1980</p><p><strong>التغيرات الجينية الهامة المحددة:</strong></p><ul><li><strong>جين TTN:</strong> تغير بالحذف (c.80248_80251del) مصنف كمرضي. هذا التغير يسبب تغييرًا في الجين، مما يؤدي إلى بروتين مقطوع. الطفرات في جين TTN مرتبطة بمرض توسع عضلة القلب، الذي قد يؤثر على وظيفة القلب.</li><li><strong>جين MYH7:</strong> تغير بلا معنى (c.742G&gt;A) مصنف كمحتمل مرضي. هذا التغير يعدل جزءًا محافظًا جدًا من الجين، وهو مهم لوظيفة عضلة القلب. الطفرات في جين MYH7 مرتبطة بعدة أشكال من أمراض عضلة القلب.</li><li><strong>جين LMNA:</strong> تغير بلا معنى (c.1588C&gt;T) ذو معنى غير مؤكد. هذا التغير يقع في منطقة حرجة من الجين، التي تشارك في بنية نواة الخلية. الطفرات في جين LMNA يمكن أن تسبب مجموعة من الأمراض، بما في ذلك أمراض عضلة القلب والضمور العضلي، لكن التأثير الدقيق لهذا التغير المحدد لا يزال غير واضح.</li></ul><p><strong>الحالات المرتبطة:</strong> من المحتمل أن تكون التغيرات المحددة في جينات TTN و MYH7 مسؤولة عن مرض توسع عضلة القلب الملاحظ فيك. أهمية التغير في جين LMNA لا تزال غير مؤكدة وتتطلب مزيدًا من البحث.</p></div><div><h3>التغيرات الجينية المرضية</h3><p>خلال تحليل مادتك الجينية، حددنا تغيرات في الحمض النووي الخاص بك تعرف بالتغيرات الجينية المرضية. هذه التغيرات قد ارتبطت سابقًا بمشاكل صحية محددة. ومع ذلك، من المهم أن تأخذ في الاعتبار أن وجود تغير جيني مرضي لا يعني بالضرورة أنك ستطور الحالة المرتبطة به، حيث يمكن لعوامل جينية وبيئية أخرى أن تؤثر على النتيجة. سيعمل مقدم الرعاية الصحية الخاص بك معك لتقييم مخاطرك الفردية ومناقشة استراتيجيات الإدارة المناسبة.</p></div><br/><div><h3>التراث الجيني</h3><p>وفقًا لنتائجك، يتبع التغير الجيني المحدد نمطًا من الوراثة السائدة الجسمية. هذا يعني أنه يكفي وجود نسخة واحدة من الجين المتغير لامتلاك الصفة أو الحالة المرتبطة بها. إذا كنت تعاني من مرض جسمي سائد، فإن كل طفل من أطفالك لديه فرصة بنسبة 50% لوراثته منك. بعض الأمثلة المعروفة للحالات التي تتبع هذا النمط هي مرض هنتنغتون والتقزم الغضروفي.</p></div><br/><div><h3>معلومات إضافية</h3><p><strong>التوصيات:</strong></p><ul><li>تقييم سريري لأفراد عائلتك لتحديد الحاملين المحتملين للتغيرات الجينية المرضية.</li><li>الاستشارة الجينية لك ولعائلتك لمناقشة النتائج وتداعياتها.</li><li>المتابعة الدورية مع أخصائي أمراض القلب المتخصص في الأمراض الجينية القلبية.</li></ul></div>';
+            let test = '<output><div title="Intro"><h3>报告介绍</h3><p>您刚刚上传的遗传信息是一份遗传分析报告，它有助于解释患者心肌病可能的遗传原因。本报告的目的是识别可能与患者临床状况相关的遗传变异。</p></div><div title="Genetic Technique"><p>在分析中，我们采用了一种称为外显子测序的方法。这种选择性的方法专注于您DNA中包含制造蛋白质指令的部分，而蛋白质是您身体中基本的构建模块。尽管外显子只占您全部DNA的一小部分，但大多数导致疾病的遗传变化都发生在这里。通过专注于这一关键区域，我们可以有效地识别可能影响您健康的潜在遗传因素。</p></div><br/><div title="Genetic"><h3>遗传信息</h3><p>患者：Juan Pérez，出生于1980年3月15日，有扩张型心肌病（CMD）病史和家族心肌病及心律失常史。遗传分析识别了几种与心肌病相关的基因变异：</p><ul><li><strong>TTN基因：</strong>一种被归类为致病性的缺失变异（c.80248_80251del）。这种变异打乱了基因的阅读框架，导致产生一个截短的蛋白质。TTN基因的突变与常染色体显性遗传的扩张型心肌病有关。</li><li><strong>MYH7基因：</strong>一种被认为可能致病的无意义变异（c.742G>A）。这种变异影响到心脏β肌球蛋白重链中一个高度保守的残基。MYH7基因的突变与多种形式的心肌病有关。</li><li><strong>LMNA基因：</strong>一种意义不明的无意义变异（c.1588C>T）。这种变异位于LMNA基因的一个关键区域，该基因编码蛋白质lamin A/C。LMNA基因的突变可以导致一系列疾病，如心肌病和肌肉营养不良，但这个特定变异的确切影响尚不清楚。</li></ul></div><div title="Pathogenic Variants"><p>在分析您的遗传物质时，我们识别了被称为致病性变异的DNA变化。这些改变以前已经与特定健康问题相关联。然而，重要的是要注意，拥有一个致病性变异并不一定意味着您就会发展出相关的疾病，因为其他遗传和环境因素也可能影响结果。您的医疗服务提供者将与您合作评估您的个人风险，并讨论适当的管理策略。</p></div><br/><div title="Genetic Heritage"><p>根据您的结果，所识别的遗传变化遵循常染色体显性遗传模式。这意味着只需要一个改变的基因副本就能表现出相关的特征或疾病。如果您患有常染色体显性疾病，您的每个孩子都有50%的几率从您那里继承它。一些众所周知的遵循这种模式的疾病包括亨廷顿病和软骨发育不全。</p></div><br/><div title="Paternal Tests Confirmation"><p>考虑到在您的DNA中发现的遗传变异，我们建议您进行亲子鉴定测试。通过分析您父母的遗传物质，我们可以确定您的结果中识别的变异是遗传的还是自发产生的。这些额外的信息可以提供有关您和家庭成员健康风险的宝贵信息。您的医疗专业人员可以指导您完成父母分析的过程，并帮助您理解结果的含义。</p></div><br/><div title="Others"><h3>附加信息</h3><p>建议包括对患者家庭成员进行详细的临床评估，以识别可能携带致病性变异的人，提供遗传咨询以讨论结果及其含义，以及定期与专门从事遗传性疾病的心脏病专家进行随访。</p></div><div title="Intro"><h3>报告介绍</h3><p>您刚刚上传的遗传信息是一份遗传分析报告，它有助于解释患者心肌病可能的遗传原因。本报告的目的是识别可能与患者临床状况相关的遗传变异。</p></div><div title="Genetic Technique"><p>在分析中，我们采用了一种称为外显子测序的方法。这种选择性的方法专注于您DNA中包含制造蛋白质指令的部分，而蛋白质是您身体中基本的构建模块。尽管外显子只占您全部DNA的一小部分，但大多数导致疾病的遗传变化都发生在这里。通过专注于这一关键区域，我们可以有效地识别可能影响您健康的潜在遗传因素。</p></div><br/><div title="Genetic"><h3>遗传信息</h3><p>患者：Juan Pérez，出生于1980年3月15日，有扩张型心肌病（CMD）病史和家族心肌病及心律失常史。遗传分析识别了几种与心肌病相关的基因变异：</p><ul><li><strong>TTN基因：</strong>一种被归类为致病性的缺失变异（c.80248_80251del）。这种变异打乱了基因的阅读框架，导致产生一个截短的蛋白质。TTN基因的突变与常染色体显性遗传的扩张型心肌病有关。</li><li><strong>MYH7基因：</strong>一种被认为可能致病的无意义变异（c.742G>A）。这种变异影响到心脏β肌球蛋白重链中一个高度保守的残基。MYH7基因的突变与多种形式的心肌病有关。</li><li><strong>LMNA基因：</strong>一种意义不明的无意义变异（c.1588C>T）。这种变异位于LMNA基因的一个关键区域，该基因编码蛋白质lamin A/C。LMNA基因的突变可以导致一系列疾病，如心肌病和肌肉营养不良，但这个特定变异的确切影响尚不清楚。</li></ul></div><div title="Pathogenic Variants"><p>在分析您的遗传物质时，我们识别了被称为致病性变异的DNA变化。这些改变以前已经与特定健康问题相关联。然而，重要的是要注意，拥有一个致病性变异并不一定意味着您就会发展出相关的疾病，因为其他遗传和环境因素也可能影响结果。您的医疗服务提供者将与您合作评估您的个人风险，并讨论适当的管理策略。</p></div><br/><div title="Genetic Heritage"><p>根据您的结果，所识别的遗传变化遵循常染色体显性遗传模式。这意味着只需要一个改变的基因副本就能表现出相关的特征或疾病。如果您患有常染色体显性疾病，您的每个孩子都有50%的几率从您那里继承它。一些众所周知的遵循这种模式的疾病包括亨廷顿病和软骨发育不全。</p></div><br/><div title="Paternal Tests Confirmation"><p>考虑到在您的DNA中发现的遗传变异，我们建议您进行亲子鉴定测试。通过分析您父母的遗传物质，我们可以确定您的结果中识别的变异是遗传的还是自发产生的。这些额外的信息可以提供有关您和家庭成员健康风险的宝贵信息。您的医疗专业人员可以指导您完成父母分析的过程，并帮助您理解结果的含义。</p></div><br/><div title="Others"><h3>附加信息</h3><p>建议包括对患者家庭成员进行详细的临床评估，以识别可能携带致病性变异的人，提供遗传咨询以讨论结果及其含义，以及定期与专门从事遗传性疾病的心脏病专家进行随访。</p></div><div title="Intro"><h3>报告介绍</h3><p>您刚刚上传的遗传信息是一份遗传分析报告，它有助于解释患者心肌病可能的遗传原因。本报告的目的是识别可能与患者临床状况相关的遗传变异。</p></div><div title="Genetic Technique"><p>在分析中，我们采用了一种称为外显子测序的方法。这种选择性的方法专注于您DNA中包含制造蛋白质指令的部分，而蛋白质是您身体中基本的构建模块。尽管外显子只占您全部DNA的一小部分，但大多数导致疾病的遗传变化都发生在这里。通过专注于这一关键区域，我们可以有效地识别可能影响您健康的潜在遗传因素。</p></div><br/><div title="Genetic"><h3>遗传信息</h3><p>患者：Juan Pérez，出生于1980年3月15日，有扩张型心肌病（CMD）病史和家族心肌病及心律失常史。遗传分析识别了几种与心肌病相关的基因变异：</p><ul><li><strong>TTN基因：</strong>一种被归类为致病性的缺失变异（c.80248_80251del）。这种变异打乱了基因的阅读框架，导致产生一个截短的蛋白质。TTN基因的突变与常染色体显性遗传的扩张型心肌病有关。</li><li><strong>MYH7基因：</strong>一种被认为可能致病的无意义变异（c.742G>A）。这种变异影响到心脏β肌球蛋白重链中一个高度保守的残基。MYH7基因的突变与多种形式的心肌病有关。</li><li><strong>LMNA基因：</strong>一种意义不明的无意义变异（c.1588C>T）。这种变异位于LMNA基因的一个关键区域，该基因编码蛋白质lamin A/C。LMNA基因的突变可以导致一系列疾病，如心肌病和肌肉营养不良，但这个特定变异的确切影响尚不清楚。</li></ul></div><div title="Pathogenic Variants"><p>在分析您的遗传物质时，我们识别了被称为致病性变异的DNA变化。这些改变以前已经与特定健康问题相关联。然而，重要的是要注意，拥有一个致病性变异并不一定意味着您就会发展出相关的疾病，因为其他遗传和环境因素也可能影响结果。您的医疗服务提供者将与您合作评估您的个人风险，并讨论适当的管理策略。</p></div><br/><div title="Genetic Heritage"><p>根据您的结果，所识别的遗传变化遵循常染色体显性遗传模式。这意味着只需要一个改变的基因副本就能表现出相关的特征或疾病。如果您患有常染色体显性疾病，您的每个孩子都有50%的几率从您那里继承它。一些众所周知的遵循这种模式的疾病包括亨廷顿病和软骨发育不全。</p></div><br/><div title="Paternal Tests Confirmation"><p>考虑到在您的DNA中发现的遗传变异，我们建议您进行亲子鉴定测试。通过分析您父母的遗传物质，我们可以确定您的结果中识别的变异是遗传的还是自发产生的。这些额外的信息可以提供有关您和家庭成员健康风险的宝贵信息。您的医疗专业人员可以指导您完成父母分析的过程，并帮助您理解结果的含义。</p></div><br/><div title="Others"><h3>附加信息</h3><p>建议包括对患者家庭成员进行详细的临床评估，以识别可能携带致病性变异的人，提供遗传咨询以讨论结果及其含义，以及定期与专门从事遗传性疾病的心脏病专家进行随访。</p></div><div title="Intro"><h3>报告介绍</h3><p>您刚刚上传的遗传信息是一份遗传分析报告，它有助于解释患者心肌病可能的遗传原因。本报告的目的是识别可能与患者临床状况相关的遗传变异。</p></div><div title="Genetic Technique"><p>在分析中，我们采用了一种称为外显子测序的方法。这种选择性的方法专注于您DNA中包含制造蛋白质指令的部分，而蛋白质是您身体中基本的构建模块。尽管外显子只占您全部DNA的一小部分，但大多数导致疾病的遗传变化都发生在这里。通过专注于这一关键区域，我们可以有效地识别可能影响您健康的潜在遗传因素。</p></div><br/><div title="Genetic"><h3>遗传信息</h3><p>患者：Juan Pérez，出生于1980年3月15日，有扩张型心肌病（CMD）病史和家族心肌病及心律失常史。遗传分析识别了几种与心肌病相关的基因变异：</p><ul><li><strong>TTN基因：</strong>一种被归类为致病性的缺失变异（c.80248_80251del）。这种变异打乱了基因的阅读框架，导致产生一个截短的蛋白质。TTN基因的突变与常染色体显性遗传的扩张型心肌病有关。</li><li><strong>MYH7基因：</strong>一种被认为可能致病的无意义变异（c.742G>A）。这种变异影响到心脏β肌球蛋白重链中一个高度保守的残基。MYH7基因的突变与多种形式的心肌病有关。</li><li><strong>LMNA基因：</strong>一种意义不明的无意义变异（c.1588C>T）。这种变异位于LMNA基因的一个关键区域，该基因编码蛋白质lamin A/C。LMNA基因的突变可以导致一系列疾病，如心肌病和肌肉营养不良，但这个特定变异的确切影响尚不清楚。</li></ul></div><div title="Pathogenic Variants"><p>在分析您的遗传物质时，我们识别了被称为致病性变异的DNA变化。这些改变以前已经与特定健康问题相关联。然而，重要的是要注意，拥有一个致病性变异并不一定意味着您就会发展出相关的疾病，因为其他遗传和环境因素也可能影响结果。您的医疗服务提供者将与您合作评估您的个人风险，并讨论适当的管理策略。</p></div><br/><div title="Genetic Heritage"><p>根据您的结果，所识别的遗传变化遵循常染色体显性遗传模式。这意味着只需要一个改变的基因副本就能表现出相关的特征或疾病。如果您患有常染色体显性疾病，您的每个孩子都有50%的几率从您那里继承它。一些众所周知的遵循这种模式的疾病包括亨廷顿病和软骨发育不全。</p></div><br/><div title="Paternal Tests Confirmation"><p>考虑到在您的DNA中发现的遗传变异，我们建议您进行亲子鉴定测试。通过分析您父母的遗传物质，我们可以确定您的结果中识别的变异是遗传的还是自发产生的。这些额外的信息可以提供有关您和家庭成员健康风险的宝贵信息。您的医疗专业人员可以指导您完成父母分析的过程，并帮助您理解结果的含义。</p></div><br/><div title="Others"><h3>附加信息</h3><p>建议包括对患者家庭成员进行详细的临床评估，以识别可能携带致病性变异的人，提供遗传咨询以讨论结果及其含义，以及定期与专门从事遗传性疾病的心脏病专家进行随访。</p></div><div title="Intro"><h3>报告介绍</h3><p>您刚刚上传的遗传信息是一份遗传分析报告，它有助于解释患者心肌病可能的遗传原因。本报告的目的是识别可能与患者临床状况相关的遗传变异。</p></div><div title="Genetic Technique"><p>在分析中，我们采用了一种称为外显子测序的方法。这种选择性的方法专注于您DNA中包含制造蛋白质指令的部分，而蛋白质是您身体中基本的构建模块。尽管外显子只占您全部DNA的一小部分，但大多数导致疾病的遗传变化都发生在这里。通过专注于这一关键区域，我们可以有效地识别可能影响您健康的潜在遗传因素。</p></div><br/><div title="Genetic"><h3>遗传信息</h3><p>患者：Juan Pérez，出生于1980年3月15日，有扩张型心肌病（CMD）病史和家族心肌病及心律失常史。遗传分析识别了几种与心肌病相关的基因变异：</p><ul><li><strong>TTN基因：</strong>一种被归类为致病性的缺失变异（c.80248_80251del）。这种变异打乱了基因的阅读框架，导致产生一个截短的蛋白质。TTN基因的突变与常染色体显性遗传的扩张型心肌病有关。</li><li><strong>MYH7基因：</strong>一种被认为可能致病的无意义变异（c.742G>A）。这种变异影响到心脏β肌球蛋白重链中一个高度保守的残基。MYH7基因的突变与多种形式的心肌病有关。</li><li><strong>LMNA基因：</strong>一种意义不明的无意义变异（c.1588C>T）。这种变异位于LMNA基因的一个关键区域，该基因编码蛋白质lamin A/C。LMNA基因的突变可以导致一系列疾病，如心肌病和肌肉营养不良，但这个特定变异的确切影响尚不清楚。</li></ul></div><div title="Pathogenic Variants"><p>在分析您的遗传物质时，我们识别了被称为致病性变异的DNA变化。这些改变以前已经与特定健康问题相关联。然而，重要的是要注意，拥有一个致病性变异并不一定意味着您就会发展出相关的疾病，因为其他遗传和环境因素也可能影响结果。您的医疗服务提供者将与您合作评估您的个人风险，并讨论适当的管理策略。</p></div><br/><div title="Genetic Heritage"><p>根据您的结果，所识别的遗传变化遵循常染色体显性遗传模式。这意味着只需要一个改变的基因副本就能表现出相关的特征或疾病。如果您患有常染色体显性疾病，您的每个孩子都有50%的几率从您那里继承它。一些众所周知的遵循这种模式的疾病包括亨廷顿病和软骨发育不全。</p></div><br/><div title="Paternal Tests Confirmation"><p>考虑到在您的DNA中发现的遗传变异，我们建议您进行亲子鉴定测试。通过分析您父母的遗传物质，我们可以确定您的结果中识别的变异是遗传的还是自发产生的。这些额外的信息可以提供有关您和家庭成员健康风险的宝贵信息。您的医疗专业人员可以指导您完成父母分析的过程，并帮助您理解结果的含义。</p></div><br/><div title="Others"><h3>附加信息</h3><p>建议包括对患者家庭成员进行详细的临床评估，以识别可能携带致病性变异的人，提供遗传咨询以讨论结果及其含义，以及定期与专门从事遗传性疾病的心脏病专家进行随访。</p></div></output>'
+            const nonLatinLanguages = [
+              "am", "ar", "hy", "as", "av", "ba", "be", "bn", "bg", "my", "zh-CN", "cv", "ce", "ka", 
+              "el", "gu", "he", "hi", "ja", "kn", "kk", "km", "ko", "ky", "lo", "mk", "ml", "mn", 
+              "ne", "or", "pa", "fa", "ps", "ru", "sa", "si", "sd", "ta", "te", "th", "bo", "tk", 
+              "ug", "uk", "ur", "uz", "vi", "yi"
+          ];
+      
+          if (nonLatinLanguages.includes(this.selectedLanguage.code)) {
+              await this.jsPDFService.generateResultsPDF(this.translatedText, this.translate.store.currentLang, qrCodeDataURL);
+          } else {
+              await this.jsPDFService.generateResultsPDF2(this.translatedText, this.translate.store.currentLang, qrCodeDataURL);
+          }
             /* let htmldemo={"text":"<div><br>  <h3>Resumen médico</h3><br>  <p>Los documentos que acaba de cargar son historiales médicos y ayudan a explicar su historial de salud, su estado actual y los tratamientos en curso. Este resumen está diseñado para ofrecerle una comprensión clara de su situación médica.</p><br>  <h4>Presentación del paciente</h4><br>  <p>El paciente es Sergio Isla Miranda, un varón de 14 años con un historial de afecciones médicas complejas, principalmente de naturaleza neurológica.</p><br>  <h4>Diagnósticos</h4><br>  <ul><br>    <li><strong>Epilepsia:</strong> Sergio padece epilepsia refractaria, concretamente Síndrome de Dravet, que es una forma grave de epilepsia de difícil tratamiento.</li><br>    <li><strong>Trastornos del desarrollo:</strong> Tiene un trastorno generalizado del desarrollo y un trastorno grave del lenguaje expresivo y comprensivo.</li><br>    <li><strong>Condiciones físicas:</strong> Sergio también tiene los pies muy arqueados (pies cavos), anemia ferropénica y una curvatura de la columna vertebral (escoliosis dorsolumbar).</li><br>  </ul><br>  <h4>Tratamiento y medicación</h4><br>  <ul><br>    <li><strong>Medicación:</strong> Sergio toma varios medicamentos, entre ellos Diacomit, Depakine, Noiafren y Fenfluramina para controlar su epilepsia.</li><br>    <li><strong>Suplementos:</strong> También toma suplementos de hierro para tratar su anemia.</li><br>    <li><strong>Terapias:</strong> Participa en fisioterapia, logopedia y educación física adaptada para favorecer su desarrollo y su salud física.</li><br>  </ul><br>  <h4>Otros</h4><br>  <ul><br>    <li>Sergio ha sufrido estados epilépticos, que son ataques prolongados que requieren atención médica inmediata.</li><br>    <li>Tiene una mutación en el gen SCN1A, que está asociada a su epilepsia.</li><br>    <li>Su plan de tratamiento se sigue de cerca y se ajusta según sea necesario para controlar su enfermedad.</li><br>    <li>Sergio requiere atención y seguimiento continuos debido a la gravedad de su epilepsia, que puede incluir emergencias potencialmente mortales como una parada cardiaca.</li><br>  </ul><br>  <p>Es importante que Sergio y sus cuidadores mantengan una comunicación abierta con los profesionales sanitarios para garantizar el mejor tratamiento posible de su enfermedad.</p><br></div>"};
             htmldemo.text = htmldemo.text.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
             this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.store.currentLang, qrCodeDataURL)*/
@@ -1592,17 +1730,20 @@ async translateInverseSummary(msg): Promise<string> {
         this.allLangs = [];
         this.subscription.add( this.langService.getAllLangs()
         .subscribe( (res : any) => {
+          console.log(res)
           this.allLangs=res;
         }));
     }
 
-    translateText(){
+    async translateText(){
       if(this.summaryPatient == ''){
         this.toastr.error('', this.translate.instant("demo.No text to translate"));
         return;
       }
       this.callingTranslate = true;
-      this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage, this.summaryPatient )
+      var deepl_code = await this.getDeeplCode(this.selectedLanguage.code);
+      if (deepl_code == null) {
+        this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, this.summaryPatient )
         .subscribe((res2: any) => {
           if (res2.text != undefined) {
             res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
@@ -1616,6 +1757,29 @@ async translateInverseSummary(msg): Promise<string> {
           this.insightsService.trackException(err);
           this.callingTranslate = false;
         }));
+      }else{
+        var jsontestLangText = [{ "Text": this.summaryPatient  }]
+        this.subscription.add(this.apiDx29ServerService.getDeepLTranslationInvert(this.selectedLanguage.code, jsontestLangText )
+        .subscribe((res2: any) => {
+          console.log(res2)
+          if (res2.text != undefined) {
+            res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
+            res2.text = res2.text.replace(/\\n\\n/g, '');
+            res2.text = res2.text.replace(/\n/g, '');
+            this.translatedText = res2.text;
+          }
+          this.callingTranslate = false;
+        }, (err) => {
+          console.log(err);
+          this.insightsService.trackException(err);
+          this.callingTranslate = false;
+        }));
+      }
+     
+    }
+
+    getDeeplCode(msCode) {
+      return this.langDict[msCode] || null;
     }
 
     changeLanguage(){
@@ -1625,11 +1789,46 @@ async translateInverseSummary(msg): Promise<string> {
 
     async closeModalTranslate() {
       this.translatedText = '';
-      this.selectedLanguage = 'English';
+      this.selectedLanguage = {"code":"en","name":"English","nativeName":"English"};
       if (this.modalReference != undefined) {
         this.modalReference.close();
         this.modalReference = undefined;
       }
     }
 
+
+    async toggleEdit(content: TemplateRef<any>) {
+      this.originalContent = this.summaryPatient;
+      this.editedContent = this.summaryPatient; 
+  
+      let ngbModalOptions: NgbModalOptions = {
+        backdrop: 'static',
+        keyboard: false,
+        windowClass: 'ModalClass-xl' // xl, lg, sm
+      };
+  
+      this.modalReference = this.modalService.open(content, ngbModalOptions);
+      await this.delay(500);
+      setTimeout(() => {
+        const modalElement = document.getElementById('editableDiv');
+        if (modalElement) {
+          this.editableDiv = new ElementRef(modalElement);
+        }
+      }, 0);
+
+  
+
+    }
+  
+    saveChanges(modal) {
+      if (this.editableDiv && this.editableDiv.nativeElement) {
+        this.summaryPatient = this.editableDiv.nativeElement.innerHTML;
+      }
+      modal.close();
+    }
+  
+    cancelChanges(modal) {
+      this.editedContent = this.originalContent;
+      modal.close();
+    }
 }

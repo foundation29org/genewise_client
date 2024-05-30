@@ -266,10 +266,10 @@
                                                 <button class="btn btn-primary btn-sm ml-1 mr-1"
                                                     (click)="openFeedback()" target="_blank">{{'demo.Evaluate summary' |
                                                     translate }}</button>
+                                                <button class="btn btn-primary btn-sm ml-1" (click)="showPanelTranslate(contentTranslate)">{{'generics.Translate' | translate }}</button>
+                                                <button class="btn btn-primary btn-sm ml-1" (click)="toggleEdit(showPanelEdit)">{{'generics.Edit' | translate }}</button>
                                                 <button class="btn btn-primary btn-sm ml-1"
-                                                    (click)="download()">{{'generics.ExportData' | translate }}</button>
-                                                <button class="btn btn-primary btn-sm ml-1" (click)="showPanelTranslate(contentTranslate)">Translate</button>
-
+                                                (click)="download()">{{'generics.ExportData' | translate }}</button>
                                             </div>
                                             <div class="custom-body text-left p-2">
                                                 <span [innerHTML]="summaryPatient | safe: 'html'"></span>
@@ -622,7 +622,7 @@
 <ng-template #contentTranslate id="contentTranslate" let-c="close" let-d="dismiss" appendTo="body">
     <div class="modal-header" id="idHeader">
         <div class="content-header text-left">
-            <h4 class="mb-0">Translate</h4>
+            <h4 class="mb-0">{{'generics.Translate' | translate }}</h4>
         </div>
         <button type="button" class="close" aria-label="Close" (click)="closeModal();">
             <span aria-hidden="true">&times;</span>
@@ -632,18 +632,18 @@
        
         <div class="row mt-3">
             <div class="col-md-6">
-                <h5>Original Text</h5>
+                <h5>{{'demo.Original Text' | translate }}</h5>
                 <div class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
                     <span [innerHTML]="summaryPatient | safe: 'html'"></span>
                 </div>
             </div>
             <div class="col-md-6" *ngIf="translatedText !='' ">
-                <h5>Translated Text</h5>
+                <h5>{{'demo.Translated Text' | translate }}</h5>
                 <div *ngIf="!callingTranslate" class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
-                    <span [innerHTML]="translatedText | safe: 'html'"></span>
+                    <span id="pdf-content" [innerHTML]="translatedText | safe: 'html'"></span>
                 </div>
                 <span *ngIf="!callingTranslate" class="float-right pt-2">
-                    <button class="btn btn-primary btn-sm ml-1" (click)="changeLanguage()">Change language</button>
+                    <button class="btn btn-primary btn-sm ml-1" (click)="changeLanguage()">{{'demo.Change language' | translate }}</button>
                     <button class="btn btn-primary btn-sm ml-1" (click)="download2()">{{'generics.ExportData' | translate }}</button>
                 </span>
                 
@@ -651,14 +651,14 @@
             <div class="col-md-6" *ngIf="translatedText =='' ">
                 <div *ngIf="!callingTranslate">
                     <div class="form-group">
-                        <label for="languageSelect">Select Language</label>
+                        <label for="languageSelect">{{'demo.Select Language' | translate }}</label>
                         <select id="languageSelect" class="form-control" [(ngModel)]="selectedLanguage">
-                            <option *ngFor="let lang of allLangs" [value]="lang.name">
+                            <option *ngFor="let lang of allLangs" [ngValue]="lang">
                                 {{ lang.name }} ({{ lang.nativeName }})
                             </option>
                         </select>
                     </div>
-                    <button type="button" class="btn btn-primary" (click)="translateText();">Translate</button>
+                    <button type="button" class="btn btn-primary" (click)="translateText();">{{'generics.Translate' | translate }}</button>
                 </div>
                 <div *ngIf="callingTranslate" class="row">
                     <span class="col-md-12 center-elements">
@@ -672,7 +672,24 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeModalTranslate();">Close</button>
+        <button type="button" class="btn btn-secondary" (click)="closeModalTranslate();">{{'generics.Close' | translate }}</button>
         
+    </div>
+</ng-template>
+<ng-template #showPanelEdit let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title">{{'demo.Edit summary' | translate }}</h4>
+        <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="custom-body text-left p-2" contenteditable="true" id="editableDiv">
+            <span [innerHTML]="editedContent | safe: 'html'"></span>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="saveChanges(modal)">{{'generics.SaveAndClose' | translate }}</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelChanges(modal)">{{'generics.Cancel' | translate }}</button>
     </div>
 </ng-template>

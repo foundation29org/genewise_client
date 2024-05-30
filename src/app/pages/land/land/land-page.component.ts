@@ -388,6 +388,21 @@ showForm() {
     this.mode = '1';
     this.submode = 'opt1';
     this.docs = [];
+    this.summaryPatient = '';
+    this.conversation = [];
+    this.context = [];
+    this.messages = [];
+    this.initChat();
+    this.totalTokens = 0;
+    this.modegod = false;
+    this.countModeGod = 0;
+    this.callingSummary = false;
+    this.medicalText = '';
+    this.summaryDx29 = '';
+    this.step = 1;
+    this.loadedDocs = false;
+    this.originalContent = '';
+    this.editedContent = '';
   }
 
   setupRecognition() {

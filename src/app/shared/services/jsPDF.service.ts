@@ -244,147 +244,133 @@ export class jsPDFService {
         return images;
     }
 
-    generateResultsPDF2(summary, lang, qrCodeDataURL){
-        //create a copy of jsonContent
-        console.log(summary)
-        this.lang = lang;
+    generateResultsPDF2(summary, lang, qrCodeDataURL) {
+        // Crear el documento PDF
         const doc = new jsPDF();
-        var lineText = 0;
-        
-
-        // Cabecera inicial
+        var lineText = 45; // Inicialización de la posición Y para el contenido del PDF
+    
+        // Cabecera inicial con el logo
         var img_logo = new Image();
-        /*img_logo.src = "assets/img/logo-lg-white.png"
-        doc.addImage(img_logo, 'png', 10, 10, 20, 17);*/
-        img_logo.src = "assets/img/logo-lg-white.png"
+        img_logo.src = "assets/img/logo-lg-white.png";
         doc.addImage(img_logo, 'png', 10, 17, 54, 15);
+    
         doc.setFont(undefined, 'normal');
         doc.setFontSize(10);
+    
         var actualDate = new Date();
         var dateHeader = this.getFormatDate(actualDate);
-        if(lang=='es'){
+        if (lang == 'es') {
             this.writeDataHeader(doc, 87, 5, dateHeader);
-        }else{
+        } else {
             this.writeDataHeader(doc, 93, 5, dateHeader);
         }
-
-       //Add QR
-       if(qrCodeDataURL == null){
-        var img_qr = new Image();
-        img_qr.src = "assets/img/elements/qr.png"
-        doc.addImage(img_qr, 'png', 160, 5, 32, 30);
-        doc.setFontSize(8);
-        doc.text('https://nav29.org', 164, 37);
-        doc.setFontSize(10);
-       }else{
-        var img_qr = new Image();
-        img_qr.src = qrCodeDataURL;
-        doc.addImage(img_qr, 'png', 160, 5, 32, 30);
-        doc.setFontSize(8);
-        doc.text(this.translate.instant("pdf.Scan to rate the summary"), 152, 37);
-        doc.setFontSize(10);
-       }
-        
-
+    
+        // Añadir QR
+        if (qrCodeDataURL == null) {
+            var img_qr = new Image();
+            img_qr.src = "assets/img/elements/qr.png";
+            doc.addImage(img_qr, 'png', 160, 5, 32, 30);
+            doc.setFontSize(8);
+            doc.text('https://nav29.org', 164, 37);
+        } else {
+            var img_qr = new Image();
+            img_qr.src = qrCodeDataURL;
+            doc.addImage(img_qr, 'png', 160, 5, 32, 30);
+            doc.setFontSize(8);
+            doc.text(this.translate.instant("pdf.Scan to rate the summary"), 152, 37);
+        }
+    
         this.newHeatherAndFooter(doc);
-
-        lineText += 45;
+    
+        // Parser del HTML
         const parser = new DOMParser();
-        const dochtml = parser.parseFromString(summary, 'text/html');
-        const processNode = (node, yPos) => {
-            lineText = yPos;
-            if (node.nodeType === Node.TEXT_NODE) {
-              // Dividir el texto del nodo en palabras
-              
-              //lineText += 10;
-            } else if (node.nodeType === Node.ELEMENT_NODE) {
-              // Manejar diferentes tipos de elementos
-              switch (node.tagName) {
-                case 'UL':
-                    // No es necesario hacer nada al inicio de una lista, pero podrías configurar un indicador aquí si es necesario
-                    break;
-                case 'LI':
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'normal');
-                    lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, true);
-                    lineText += 2;
-                    break;
-                case 'BR':
-                    lineText += 10; // Simplemente aumentar la línea para un salto
-                    break;
-                case 'H1':
-                    doc.setFontSize(13);
-                    doc.setFont(undefined, 'bold');
-                    lineText += 5;
-                    doc.text(node.textContent.trim(), 10, lineText);
-                    lineText += 7;
-                    lineText = this.checkIfNewPage(doc, lineText);
-                    break;
-                case 'H2':
-                    doc.setFontSize(12);
-                    doc.setFont(undefined, 'bold');
-                    lineText += 5;
-                    doc.text(node.textContent.trim(), 10, lineText);
-                    lineText += 7;
-                    lineText = this.checkIfNewPage(doc, lineText);
-                    break;
-                case 'H3':
-                    doc.setFontSize(11);
-                    doc.setFont(undefined, 'bold');
-                    lineText += 5;
-                    doc.text(node.textContent.trim(), 10, lineText);
-                    lineText += 7;
-                    lineText = this.checkIfNewPage(doc, lineText);
-                    break;
-                case 'H4':
-                    doc.setFontSize(10);
-                    doc.setFont(undefined, 'bold');
-                    lineText += 5;
-                    doc.text(node.textContent.trim(), 10, lineText);
-                    lineText += 7;
-                    lineText = this.checkIfNewPage(doc, lineText);
-                    break;
-                case 'P':
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'normal');
-                    lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
-                    lineText += 5;
-                    lineText = this.checkIfNewPage(doc, lineText);
-                    break;
-                case 'SPAN':
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'normal');
-                    lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
-                    lineText += 5;
-                    lineText = this.checkIfNewPage(doc, lineText);
-                    break;
-              }
-          
-              node.childNodes.forEach(childNode => {
-                lineText = processNode(childNode, lineText);
-              });
-            }
-            return lineText;
-          };
-
-        processNode(dochtml.body, lineText);
-
-
-        lineText += 10;
+        const docHTML = parser.parseFromString(summary, 'text/html');
+        const elements = Array.from(docHTML.body.childNodes); // Obtener todos los nodos hijos del cuerpo
+    
+        // Procesar cada elemento del HTML
+        elements.forEach((element) => {
+            lineText = this.processElement(element, doc, lineText);
+            lineText = this.checkIfNewPage(doc, lineText);
+        });
+    
         this.writeAboutUs(doc, lineText);
-        
-        var pageCount = doc.internal.pages.length; //Total Page Number
-        pageCount = pageCount-1;
+    
+        // Footer y numeración de páginas
+        var pageCount = doc.internal.pages.length - 1;
         for (var i = 1; i <= pageCount; i++) {
             doc.setPage(i);
-            //footer page
-            doc.text(this.translate.instant("pdf.page")+ ' ' + i + '/' + pageCount, 97, 290);
+            doc.text(this.translate.instant("pdf.page") + ' ' + i + '/' + pageCount, 97, 290);
         }
-        // Save file
+    
         var date = this.getDate();
         doc.save('Nav29_Report_' + date + '.pdf');
-
     }
+
+    // Procesar un elemento HTML y añadirlo al PDF
+processElement(node, doc, lineText) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        // Si es un nodo de texto, añadirlo al PDF
+        doc.setFontSize(9);
+        lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+        switch (node.tagName) {
+            case 'H1':
+                doc.setFontSize(13);
+                doc.setFont(undefined, 'bold');
+                lineText += 5;
+                doc.text(node.textContent.trim(), 10, lineText);
+                lineText += 7;
+                break;
+            case 'H2':
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                lineText += 5;
+                doc.text(node.textContent.trim(), 10, lineText);
+                lineText += 7;
+                break;
+            case 'H3':
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                lineText += 5;
+                doc.text(node.textContent.trim(), 10, lineText);
+                lineText += 7;
+                break;
+            case 'P':
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'normal');
+                lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
+                lineText += 5;
+                break;
+            case 'UL':
+                node.childNodes.forEach((liNode) => {
+                    lineText = this.processElement(liNode, doc, lineText);
+                });
+                lineText += 5;
+                break;
+            case 'LI':
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'normal');
+                lineText = this.writeLineUnique(doc, '' + node.textContent.trim(), lineText, true);
+                lineText += 5;
+                break;
+            case 'DIV':
+                lineText += 3;
+            case 'SPAN':
+                // Procesar los elementos hijos
+                node.childNodes.forEach((childNode) => {
+                    lineText = this.processElement(childNode, doc, lineText);
+                });
+                break;
+            default:
+                // Para otros elementos, procesar los hijos de forma iterativa
+                node.childNodes.forEach((childNode) => {
+                    lineText = this.processElement(childNode, doc, lineText);
+                });
+                break;
+        }
+    }
+    return lineText;
+}
 
     writeLineUnique(doc, text, lineText, isList){
         const words = text.split(' ');

@@ -259,6 +259,13 @@
                                                 <button class="btn btn-primary btn-sm ml-1"
                                                 (click)="download()">{{'generics.ExportData' | translate }}</button>
                                             </div>
+                                            <!-- Inheritance pattern image -->
+                                            <div *ngIf="inheritancePatternImage" class="text-center mb-3 inheritance-image-container">
+                                                <img [src]="inheritancePatternImage"
+                                                    alt="Patrón de herencia genética"
+                                                    class="img-fluid"
+                                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                                            </div>
                                             <div class="custom-body text-left p-2">
                                                 <span [innerHTML]="summaryPatient | safe: 'html'"></span>
                                             </div>

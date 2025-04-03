@@ -116,6 +116,7 @@ export class LandPageComponent implements OnInit, OnDestroy  {
   originalContent: string;
   editedContent: string;
   initialized = false;
+  inheritancePatternImage: string | null = null;
   @ViewChild('showPanelEdit') showPanelEdit: TemplateRef<any>;
   @ViewChild('editableDiv') editableDiv: ElementRef;
   langDict = {
@@ -332,20 +333,24 @@ finishDisclaimer() {
   }
 
   backmode0(): void {
-    this.audioOutro.play().catch(error => console.error("Error al reproducir el audio:", error));
     this.mode = '1';
     this.submode = 'opt1';
-    this.docs = [];
-    this.summaryPatient = '';
-    this.conversation = [];
-    this.context = [];
-    this.totalTokens = 0;
-    this.callingSummary = false;
-    this.medicalText = '';
-    this.summaryDx29 = '';
     this.step = 1;
-    this.originalContent = '';
-    this.editedContent = '';
+    this.loadedDocs = false;
+    this.docs = [];
+    this.timeline = [];
+    this.originalEvents = [];
+    this.groupedEvents = [];
+    this.inheritancePatternImage = null;
+    this.summaryPatient = '';
+    this.paramForm = null;
+    this.context = [];
+    this.conversation = [];
+    
+    if(this.modalReference!=undefined){
+      this.modalReference.close();
+      this.modalReference = undefined;
+    }
   }
 
   setupRecognition() {
@@ -660,6 +665,7 @@ madeSummary(role){
   this.originalEvents = [];
   this.groupedEvents = [];
   this.context = [];
+  this.inheritancePatternImage = null; // Reset inheritance pattern image before API call
   let nameFiles = [];
     for (let doc of this.docs) {
       if(doc.state == 'done'){
@@ -691,10 +697,31 @@ madeSummary(role){
     var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": role, nameFiles: nameFiles, paramForm: this.paramForm };
     this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
       .subscribe(async (res: any) => {
+        // Process metadata to determine inheritance pattern image
+        if (res.metadata && res.metadata.genetic_inheritance_pattern) {
+          const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
+          switch (pattern) {
+            case 'autosomal dominant':
+              this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
+              break;
+            case 'autosomal recessive':
+              this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
+              break;
+            case 'x-linked dominant':
+              this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
+              break;
+            case 'x-linked recessive':
+              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
+              break;
+            default:
+              this.inheritancePatternImage = null;
+          }
+        } else {
+          this.inheritancePatternImage = null;
+        }
+        
         if(res.result1 != undefined){
           res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
-          //res.response = res.response.replace(/\\n\\n/g, '<br>');
-          //res.response = res.response.replace(/\n/g, '<br>');
           res.result1 = res.result1.replace(/\\n\\n/g, '');
           res.result1 = res.result1.replace(/\n/g, '');
           this.translateInverseSummary(res.result1).catch(error => {
@@ -708,7 +735,6 @@ madeSummary(role){
         if(res.result2 != undefined){
           if(res.result2.length > 0){
             this.timeline = JSON.parse(res.result2);
-            //this.groupedEvents = this.groupEventsByMonth(this.timeline);
             this.originalEvents = this.timeline;
             this.filterEvents();
           }          
@@ -717,8 +743,10 @@ madeSummary(role){
 
       }, (err) => {
         this.callingSummary = false;
+        this.inheritancePatternImage = null; // Reset in case of error
         console.log(err);
         this.insightsService.trackException(err);
+        this.toastr.error('', this.translate.instant("generics.error try again"));
       }));
 }
 

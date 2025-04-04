@@ -53,7 +53,7 @@ declare let html2canvas: any;
 export class LandPageComponent implements OnInit, OnDestroy  {
 
   private subscription: Subscription = new Subscription();
-  loadedDocs: boolean = false;
+  loadedDocs: boolean = true;
   step: number = 1;
   docs: any = [];
   screenWidth: number;
@@ -74,6 +74,7 @@ export class LandPageComponent implements OnInit, OnDestroy  {
   modalReference: NgbModalRef;
   actualDoc: any = {};
   totalTokens = 0;
+  tokensCalculated: boolean = true;
   readonly TOKENS_LIMIT: number = 100000;
   callingSummary: boolean = false;
   summaryPatient: string = '';
@@ -336,7 +337,6 @@ finishDisclaimer() {
     this.mode = '1';
     this.submode = 'opt1';
     this.step = 1;
-    this.loadedDocs = false;
     this.docs = [];
     this.timeline = [];
     this.originalEvents = [];
@@ -499,6 +499,7 @@ finishDisclaimer() {
   }
 
   onFileDropped(event) {
+    this.tokensCalculated = false;
     for (let file of event) {
       var reader = new FileReader();
       reader.readAsArrayBuffer(file); // read file as data url
@@ -525,8 +526,10 @@ finishDisclaimer() {
   }
 
   onFileChangePDF(event) {
-    for (let file of event.target.files) {
-      if (event.target.files && file) {
+    if (event.target.files && event.target.files.length) {
+      this.tokensCalculated = false;
+      for (let i = 0; i < event.target.files.length; i++) {
+        var file = event.target.files[i];
         var reader = new FileReader();
         reader.readAsArrayBuffer(file); // read file as data url
         reader.onload = (event2: any) => { // called once readAsDataURL is completed
@@ -540,7 +543,7 @@ finishDisclaimer() {
           filename = filename.split(extension)[0];
           filename = this.myuuid + '/' + filename + extension;
           this.docs.push({ dataFile: { event: file, name: file.name, url: filename, content: event2.target.result }, langToExtract: '', medicalText: '', state: 'false', tokens: 0 });
-          if (event.target.files[0].type == 'application/pdf' || extension == '.docx' || event.target.files[0].type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || extension == '.jpg' || extension == '.png' || extension == '.jpeg' || extension == '.bmp' || extension == '.tiff' || extension == '.heif' || extension == '.pptx') {
+          if (event.target.files[i].type == 'application/pdf' || extension == '.docx' || event.target.files[i].type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || extension == '.jpg' || extension == '.png' || extension == '.jpeg' || extension == '.bmp' || extension == '.tiff' || extension == '.heif' || extension == '.pptx') {
             let index = this.docs.length - 1;
             this.prepareFile(index);
           } else {
@@ -578,12 +581,14 @@ finishDisclaimer() {
         console.log(res)
         if(res.status!=200){
           this.docs[index].state = 'failed';
+          this.submitted = false;
         }else{
           this.docs[res.doc_id].state = 'done';
           this.docs[res.doc_id].medicalText = res.data;
           this.docs[res.doc_id].summary = res.summary;
           this.docs[res.doc_id].tokens = res.tokens;
           this.totalTokens = this.totalTokens + res.tokens;
+          this.tokensCalculated = true;
           this.submitted = false;
         }
         
@@ -620,8 +625,10 @@ finishDisclaimer() {
   }
 
   confirmDeleteDoc(doc, index) {
+    this.tokensCalculated = false;
     this.totalTokens = this.totalTokens - doc.tokens;
     this.docs.splice(index, 1);
+    this.tokensCalculated = true;
   }
 
   delay(ms: number) {
@@ -708,7 +715,7 @@ madeSummary(role){
               this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
               break;
             case 'x-linked dominant':
-              this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
+              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
               break;
             case 'x-linked recessive':
               this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
@@ -853,7 +860,7 @@ async translateInverseSummary(msg): Promise<string> {
           
           // Aquí procesamos el mensaje
           const parts = msg.split(/(<table>|<\/table>)/); // Divide el mensaje en partes de tabla y no tabla
-          this.summaryPatient = parts.map((part, index) => {
+          let processedText = parts.map((part, index) => {
             if (index % 4 === 2) { // Los segmentos de tabla estarán en las posiciones 2, 6, 10, etc. (cada 4 desde el segundo)
               return processTable(part);
             } else {
@@ -861,17 +868,58 @@ async translateInverseSummary(msg): Promise<string> {
             }
           }).join('');
 
+          // Replace [IMAGEN] placeholder with the inheritance pattern image
+          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+            const imageHtml = `<div class="text-center mb-3">
+                               <img src="${this.inheritancePatternImage}" 
+                                    alt="Patrón de herencia genética" 
+                                    class="img-fluid" 
+                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                               </div>`;
+            processedText = processedText.replace('[IMAGEN]', imageHtml);
+          }
+
+          this.summaryPatient = processedText;
           this.callingSummary = false;
           resolve('ok');
         }, (err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          this.summaryPatient = processNonTableContent(msg);
+          
+          // Process text on error as well
+          let processedText = processNonTableContent(msg);
+          
+          // Replace [IMAGEN] placeholder with the inheritance pattern image
+          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+            const imageHtml = `<div class="text-center mb-3">
+                               <img src="${this.inheritancePatternImage}" 
+                                    alt="Patrón de herencia genética" 
+                                    class="img-fluid" 
+                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                               </div>`;
+            processedText = processedText.replace('[IMAGEN]', imageHtml);
+          }
+          
+          this.summaryPatient = processedText;
           this.callingSummary = false;
           resolve('ok');
         }));
     } else {
-      this.summaryPatient = processNonTableContent(msg);
+      // Process text directly for English
+      let processedText = processNonTableContent(msg);
+      
+      // Replace [IMAGEN] placeholder with the inheritance pattern image
+      if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+        const imageHtml = `<div class="text-center mb-3">
+                          <img src="${this.inheritancePatternImage}" 
+                                alt="Patrón de herencia genética" 
+                                class="img-fluid" 
+                                style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                          </div>`;
+        processedText = processedText.replace('[IMAGEN]', imageHtml);
+      }
+      
+      this.summaryPatient = processedText;
       this.callingSummary = false;
       resolve('ok');
     }
@@ -1062,6 +1110,7 @@ async translateInverseSummary(msg): Promise<string> {
             this.modalReference = undefined;
           }
           //add file to docs
+          this.tokensCalculated = false;
           let file = this.dataURLtoFile(this.capturedImage, 'photo.png');
           var reader = new FileReader();
           reader.readAsArrayBuffer(file); // read file as data url
@@ -1083,6 +1132,7 @@ async translateInverseSummary(msg): Promise<string> {
         createFile(){
           //from this.medicalText create a txt file and add to docs
           //est the name with the date
+          this.tokensCalculated = false;
           let today = new Date();
           let dd = today.getDate();
           let mm = today.getMonth()+1;
@@ -1101,6 +1151,7 @@ async translateInverseSummary(msg): Promise<string> {
           var reader = new FileReader();
           reader.readAsArrayBuffer(file); // read file as data url
           this.docs.push({ dataFile: { event: file, name: file.name, url: file.name, content: this.medicalText }, langToExtract: '', medicalText: this.medicalText, state: 'done', tokens: 0 });
+          this.tokensCalculated = true;
           if (this.modalReference != undefined) {
             this.modalReference.close();
             this.modalReference = undefined;
@@ -1189,15 +1240,30 @@ async translateInverseSummary(msg): Promise<string> {
         return;
       }
       this.callingTranslate = true;
-      var deepl_code = await this.getDeeplCode(this.selectedLanguage.code);
-      if (deepl_code == null) {
-        var testLangText = this.summaryPatient .substr(0, 4000)
+      
+      // Extract image elements before translation
+      let imageElements = [];
+      const regex = /<div class="text-center mb-3">[\s\S]*?<\/div>/g;
+      let match;
+      let processedText = this.summaryPatient;
+      
+      // Replace image elements with placeholders for translation
+      let counter = 0;
+      while ((match = regex.exec(this.summaryPatient)) !== null) {
+        const placeholder = `[IMG_PLACEHOLDER_${counter}]`;
+        imageElements.push({ placeholder: placeholder, content: match[0] });
+        processedText = processedText.replace(match[0], placeholder);
+        counter++;
+      }
+
+      let testLangText = processedText;
+      
+      if(testLangText == ''){
         this.subscription.add(this.apiDx29ServerService.getDetectLanguage(testLangText)
         .subscribe((res: any) => {
-          let jsontestLangText = [{ "Text": this.summaryPatient }]
+          let jsontestLangText = [{ "Text": processedText }]
           this.subscription.add(this.apiDx29ServerService.getTranslationSegmentsInvert(res[0].language, this.selectedLanguage.code,jsontestLangText)
-          .subscribe( (res2 : any) => {
-              
+          .subscribe((res2: any) => {
               if (res2[0] != undefined) {
                   if (res2[0].translations[0] != undefined) {
                       res2[0].translations[0].text = res2[0].translations[0].text.replace(/^```html\n|\n```$/g, '');
@@ -1206,7 +1272,6 @@ async translateInverseSummary(msg): Promise<string> {
                     this.translatedText = res2[0].translations[0].text;
                   }else{
                     console.log(res2)
-                    //mostrar en un swal que no se pudo traducir, The target language is not valid. que pruebe con la opcion de traducir con IA
                     Swal.fire({
                       icon: 'error',
                       title: this.translate.instant("demo.The target language is not valid. Try the option to translate with AI."),
@@ -1239,15 +1304,21 @@ async translateInverseSummary(msg): Promise<string> {
           this.callingTranslate = false;
       }));
       }else{
-        var jsontestLangText = [{ "Text": this.summaryPatient  }]
-        this.subscription.add(this.apiDx29ServerService.getDeepLTranslationInvert(this.selectedLanguage.code, jsontestLangText )
+        var jsontestLangText = [{ "Text": processedText }]
+        this.subscription.add(this.apiDx29ServerService.getDeepLTranslationInvert(this.selectedLanguage.code, jsontestLangText)
         .subscribe((res2: any) => {
-          console.log(res2)
           if (res2.text != undefined) {
             res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
             res2.text = res2.text.replace(/\\n\\n/g, '');
             res2.text = res2.text.replace(/\n/g, '');
-            this.translatedText = res2.text;
+            
+            // Restore image elements in the translated text
+            let translatedText = res2.text;
+            for (const imgElement of imageElements) {
+              translatedText = translatedText.replace(imgElement.placeholder, imgElement.content);
+            }
+            
+            this.translatedText = translatedText;
           }
           this.callingTranslate = false;
         }, (err) => {
@@ -1256,7 +1327,6 @@ async translateInverseSummary(msg): Promise<string> {
           this.callingTranslate = false;
         }));
       }
-     
     }
 
     async translateTextIA(){
@@ -1265,14 +1335,36 @@ async translateInverseSummary(msg): Promise<string> {
         return;
       }
       this.callingTranslate = true;
+      
+      // Extract image elements before translation
+      let imageElements = [];
+      const regex = /<div class="text-center mb-3">[\s\S]*?<\/div>/g;
+      let match;
+      let processedText = this.summaryPatient;
+      
+      // Replace image elements with placeholders for translation
+      let counter = 0;
+      while ((match = regex.exec(this.summaryPatient)) !== null) {
+        const placeholder = `[IMG_PLACEHOLDER_${counter}]`;
+        imageElements.push({ placeholder: placeholder, content: match[0] });
+        processedText = processedText.replace(match[0], placeholder);
+        counter++;
+      }
 
-      this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, this.summaryPatient )
+      this.subscription.add(this.apiDx29ServerService.getIATranslation(this.selectedLanguage.name, processedText)
         .subscribe((res2: any) => {
           if (res2.text != undefined) {
             res2.text = res2.text.replace(/^```html\n|\n```$/g, '');
             res2.text = res2.text.replace(/\\n\\n/g, '');
             res2.text = res2.text.replace(/\n/g, '');
-            this.translatedText = res2.text;
+            
+            // Restore image elements in the translated text
+            let translatedText = res2.text;
+            for (const imgElement of imageElements) {
+              translatedText = translatedText.replace(imgElement.placeholder, imgElement.content);
+            }
+            
+            this.translatedText = translatedText;
           }
           this.callingTranslate = false;
         }, (err) => {
@@ -1280,7 +1372,6 @@ async translateInverseSummary(msg): Promise<string> {
           this.insightsService.trackException(err);
           this.callingTranslate = false;
         }));
-     
     }
 
     getDeeplCode(msCode) {
@@ -1303,37 +1394,48 @@ async translateInverseSummary(msg): Promise<string> {
 
 
     async toggleEdit(content: TemplateRef<any>) {
-      this.originalContent = this.summaryPatient;
-      this.editedContent = this.summaryPatient; 
-  
-      let ngbModalOptions: NgbModalOptions = {
-        backdrop: 'static',
-        keyboard: false,
-        windowClass: 'ModalClass-xl' // xl, lg, sm
-      };
-  
-      this.modalReference = this.modalService.open(content, ngbModalOptions);
-      await this.delay(500);
-      setTimeout(() => {
-        const modalElement = document.getElementById('editableDiv');
-        if (modalElement) {
-          this.editableDiv = new ElementRef(modalElement);
+      if (!this.initialized) {
+        // Initialize with the current content
+        this.originalContent = this.summaryPatient;
+        this.editedContent = this.summaryPatient;
+        this.initialized = true;
+      }
+      
+      this.modalService.open(content, { 
+        windowClass: 'modal-xl', 
+        centered: true,
+        scrollable: true
+      }).result.then(
+        (result) => {
+          // This block is executed when the modal is closed with a result
+          if (result === 'save') {
+            // Logic for saving changes is handled in saveChanges method
+          } else if (result === 'cancel') {
+            // Logic for canceling changes is handled in cancelChanges method
+          }
+        },
+        (reason) => {
+          // This block is executed when the modal is dismissed
+          // Revert to original content
+          this.editedContent = this.summaryPatient;
         }
-      }, 0);
-
-  
-
+      );
     }
   
     saveChanges(modal) {
-      if (this.editableDiv && this.editableDiv.nativeElement) {
-        this.summaryPatient = this.editableDiv.nativeElement.innerHTML;
+      // Get edited content from the contenteditable div
+      const editableDiv = document.getElementById('editableDiv');
+      if (editableDiv) {
+        this.summaryPatient = editableDiv.innerHTML;
+        this.editedContent = this.summaryPatient;
       }
-      modal.close();
+      
+      modal.close('save');
     }
   
     cancelChanges(modal) {
+      // Revert changes
       this.editedContent = this.originalContent;
-      modal.close();
+      modal.close('cancel');
     }
 }

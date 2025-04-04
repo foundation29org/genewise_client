@@ -153,7 +153,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="p-2" *ngIf="totalTokens>1000">
+                                    <div class="p-2" *ngIf="totalTokens>1000 && tokensCalculated">
                                         <div class="progress">
                                             <div class="progress-bar" role="progressbar"
                                                 [style.width]="(totalTokens / TOKENS_LIMIT) * 100 + '%'"
@@ -221,6 +221,7 @@
                                     <div class="col-md-12">
                                         <span class="d-block mt-2 center-elements"><em
                                                 class="fa fa-spinner fa-spin fa-3x fa-fw info"></em></span>
+                                        <p class="text-center mt-2">{{'generics.Please wait' | translate }}</p>
                                     </div>
                                 </div>
                                 <div class="row" *ngIf="!callingSummary && summaryPatient==''">
@@ -258,13 +259,6 @@
                                                 <button class="btn btn-primary btn-sm ml-1 mr-1" (click)="toggleEdit(showPanelEdit)">{{'generics.Edit' | translate }}</button>
                                                 <button class="btn btn-primary btn-sm ml-1"
                                                 (click)="download()">{{'generics.ExportData' | translate }}</button>
-                                            </div>
-                                            <!-- Inheritance pattern image -->
-                                            <div *ngIf="inheritancePatternImage" class="text-center mb-3 inheritance-image-container">
-                                                <img [src]="inheritancePatternImage"
-                                                    alt="Patrón de herencia genética"
-                                                    class="img-fluid"
-                                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
                                             </div>
                                             <div class="custom-body text-left p-2">
                                                 <span [innerHTML]="summaryPatient | safe: 'html'"></span>

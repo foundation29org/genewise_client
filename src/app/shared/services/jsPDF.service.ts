@@ -146,12 +146,16 @@ export class jsPDFService {
             img_qr.src = "assets/img/elements/qr.png";
             doc.addImage(img_qr, 'PNG', 160, 5, 32, 30);
             doc.setFontSize(8);
-            doc.text('https://nav29.org', 164, 37);
+            const qrUrl = 'https://nav29.org';
+            const urlWidth = doc.getTextWidth(qrUrl);
+            doc.text(qrUrl, 160 + (32/2) - (urlWidth/2), 37);
         } else {
             img_qr.src = qrCodeDataURL;
             doc.addImage(img_qr, 'PNG', 160, 5, 32, 30);
             doc.setFontSize(8);
-            doc.text(this.translate.instant("pdf.Scan to rate the summary"), 152, 37);
+            const qrText = this.translate.instant("pdf.Scan to rate the summary");
+            const textWidth = doc.getTextWidth(qrText);
+            doc.text(qrText, 160 + (32/2) - (textWidth/2), 37);
         }
         doc.setFontSize(10);
     
@@ -185,14 +189,17 @@ export class jsPDFService {
             pageNumber++;
         }
     
-        // Ajustar la posición de writeAboutUs basado en la última posición actualHeight
-        currentHeight += 10; // Añade un pequeño margen antes de writeAboutUs
-        this.writeAboutUs(doc, currentHeight);
+        // Crear una nueva página para Foundation 29
+        doc.addPage();
+        this.newHeatherAndFooter(doc);
+        // Iniciar desde la parte superior de la página con margen
+        this.writeAboutUs(doc, 40);
     
         const pageCount = doc.internal.pages.length; // Total Page Number
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
-            doc.text(this.translate.instant("pdf.page") + ' ' + i + '/' + pageCount, 97, 290);
+            const pageText = this.translate.instant("pdf.page") + ' ' + i + '/' + pageCount;
+            doc.text(pageText, pageWidth/2, 290, { align: 'center' });
         }
     
         const date = this.getDate();
@@ -244,15 +251,18 @@ export class jsPDFService {
         return images;
     }
 
-    generateResultsPDF2(summary, lang, qrCodeDataURL) {
+    async generateResultsPDF2(summary, lang, qrCodeDataURL) {
         // Crear el documento PDF
         const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth(); // Definir pageWidth para usar en textos centrados
         var lineText = 45; // Inicialización de la posición Y para el contenido del PDF
     
         // Cabecera inicial con el logo
         var img_logo = new Image();
         img_logo.src = "assets/img/logo-lg-white.png";
-        doc.addImage(img_logo, 'png', 10, 17, 54, 15);
+        await this.loadImage(img_logo.src).then(img => {
+            doc.addImage(img, 'png', 10, 17, 54, 15);
+        });
     
         doc.setFont(undefined, 'normal');
         doc.setFontSize(10);
@@ -269,15 +279,23 @@ export class jsPDFService {
         if (qrCodeDataURL == null) {
             var img_qr = new Image();
             img_qr.src = "assets/img/elements/qr.png";
-            doc.addImage(img_qr, 'png', 160, 5, 32, 30);
-            doc.setFontSize(8);
-            doc.text('https://nav29.org', 164, 37);
+            await this.loadImage(img_qr.src).then(img => {
+                doc.addImage(img, 'png', 160, 5, 32, 30);
+                doc.setFontSize(8);
+                const qrUrl = 'https://nav29.org';
+                const urlWidth = doc.getTextWidth(qrUrl);
+                doc.text(qrUrl, 160 + (32/2) - (urlWidth/2), 37);
+            });
         } else {
             var img_qr = new Image();
             img_qr.src = qrCodeDataURL;
-            doc.addImage(img_qr, 'png', 160, 5, 32, 30);
-            doc.setFontSize(8);
-            doc.text(this.translate.instant("pdf.Scan to rate the summary"), 152, 37);
+            await this.loadImage(qrCodeDataURL).then(img => {
+                doc.addImage(img, 'png', 160, 5, 32, 30);
+                doc.setFontSize(8);
+                const qrText = this.translate.instant("pdf.Scan to rate the summary");
+                const textWidth = doc.getTextWidth(qrText);
+                doc.text(qrText, 160 + (32/2) - (textWidth/2), 37);
+            });
         }
     
         this.newHeatherAndFooter(doc);
@@ -288,120 +306,297 @@ export class jsPDFService {
         const elements = Array.from(docHTML.body.childNodes); // Obtener todos los nodos hijos del cuerpo
     
         // Procesar cada elemento del HTML
-        elements.forEach((element) => {
-            lineText = this.processElement(element, doc, lineText);
+        for (const element of elements) {
+            lineText = await this.processElement(element, doc, lineText);
             lineText = this.checkIfNewPage(doc, lineText);
-        });
+        }
     
-        this.writeAboutUs(doc, lineText);
+        // Crear una nueva página para Foundation 29
+        doc.addPage();
+        this.newHeatherAndFooter(doc);
+        // Iniciar desde la parte superior de la página con margen
+        this.writeAboutUs(doc, 40);
     
         // Footer y numeración de páginas
         var pageCount = doc.internal.pages.length - 1;
         for (var i = 1; i <= pageCount; i++) {
             doc.setPage(i);
-            doc.text(this.translate.instant("pdf.page") + ' ' + i + '/' + pageCount, 97, 290);
+            const pageText = this.translate.instant("pdf.page") + ' ' + i + '/' + pageCount;
+            doc.text(pageText, pageWidth/2, 290, { align: 'center' });
         }
     
         var date = this.getDate();
         doc.save('Genewise_Report_' + date + '.pdf');
     }
 
-    // Procesar un elemento HTML y añadirlo al PDF
-processElement(node, doc, lineText) {
-    if (node.nodeType === Node.TEXT_NODE) {
-        // Si es un nodo de texto, añadirlo al PDF
-        doc.setFontSize(9);
-        lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
-    } else if (node.nodeType === Node.ELEMENT_NODE) {
-        switch (node.tagName) {
-            case 'H1':
-                doc.setFontSize(13);
-                doc.setFont(undefined, 'bold');
-                lineText += 5;
-                doc.text(node.textContent.trim(), 10, lineText);
-                lineText += 7;
-                break;
-            case 'H2':
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                lineText += 5;
-                doc.text(node.textContent.trim(), 10, lineText);
-                lineText += 7;
-                break;
-            case 'H3':
-                doc.setFontSize(11);
-                doc.setFont(undefined, 'bold');
-                lineText += 5;
-                doc.text(node.textContent.trim(), 10, lineText);
-                lineText += 7;
-                break;
-            case 'P':
-                doc.setFontSize(9);
-                doc.setFont(undefined, 'normal');
-                lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
-                lineText += 5;
-                break;
-            case 'UL':
-                node.childNodes.forEach((liNode) => {
-                    lineText = this.processElement(liNode, doc, lineText);
-                });
-                lineText += 5;
-                break;
-            case 'LI':
-                doc.setFontSize(9);
-                doc.setFont(undefined, 'normal');
-                lineText = this.writeLineUnique(doc, '' + node.textContent.trim(), lineText, true);
-                lineText += 5;
-                break;
-            case 'DIV':
-                lineText += 3;
-            case 'SPAN':
-                // Procesar los elementos hijos
-                node.childNodes.forEach((childNode) => {
-                    lineText = this.processElement(childNode, doc, lineText);
-                });
-                break;
-            default:
-                // Para otros elementos, procesar los hijos de forma iterativa
-                node.childNodes.forEach((childNode) => {
-                    lineText = this.processElement(childNode, doc, lineText);
-                });
-                break;
-        }
+    private async loadImage(src: string): Promise<HTMLImageElement> {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous"; // Para evitar problemas CORS con imágenes externas
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                console.error('Error al cargar la imagen:', src);
+                // Creamos una imagen de placeholder muy simple para evitar errores
+                const placeholderImg = new Image();
+                placeholderImg.width = 100;
+                placeholderImg.height = 100;
+                resolve(placeholderImg);
+            };
+            img.src = src;
+        });
     }
-    return lineText;
-}
 
-    writeLineUnique(doc, text, lineText, isList){
-        const words = text.split(' ');
-        let lineSegment = '';
-        let firstLine = true;
-        while (words.length > 0) {
-            let testLine = lineSegment + words[0] + ' ';
-            if (testLine.length > this.maxCharsPerLine && lineSegment.length > 0) {
-                if(isList && firstLine){
-                    doc.text('• ' + lineSegment, 10, lineText);
-                    firstLine = false;
-                }else{
-                    doc.text(lineSegment, 10, lineText);
-                }
-            lineText += 5;
-            lineSegment = '';
-            lineText = this.checkIfNewPage(doc, lineText);
-            } else {
-            lineSegment = testLine;
-            words.shift();
+    async processElement(node, doc, lineText) {
+        const PAGE_BOTTOM_MARGIN = 270; // Margen inferior estimado para evitar cortes
+        const MIN_SPACE_AFTER_HEADER = 8; // Reducido espacio después de título
+        const HEADER_HEIGHT = 12; // Altura estimada de un título (5 antes + 7 después)
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            doc.setFontSize(9);
+            lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            switch (node.tagName) {
+                case 'H1':
+                case 'H2':
+                case 'H3':
+                    // Evitar títulos huérfanos
+                    if (lineText + HEADER_HEIGHT + MIN_SPACE_AFTER_HEADER > PAGE_BOTTOM_MARGIN) {
+                        doc.addPage();
+                        this.newHeatherAndFooter(doc);
+                        lineText = 20; // Posición inicial en nueva página
+                    }
+                    
+                    let fontSize;
+                    if (node.tagName === 'H1') fontSize = 13;
+                    else if (node.tagName === 'H2') fontSize = 12;
+                    else fontSize = 11; // H3
+
+                    doc.setFontSize(fontSize);
+                    doc.setFont(undefined, 'bold');
+                    lineText += 3; // Reducido espacio antes del título
+                    doc.text(node.textContent.trim(), 10, lineText);
+                    lineText += 5; // Reducido espacio después del título
+                    doc.setFont(undefined, 'normal');
+                    break;
+                case 'P':
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    
+                    // Comprobar si el párrafo contiene un encabezado numerado
+                    const text = node.textContent.trim();
+                    
+                    // Ya no necesitamos configuración especial aquí ya que se maneja en writeLineUnique
+                    lineText = this.writeLineUnique(doc, text, lineText, false);
+                    
+                    // El espacio adicional para encabezados numerados se maneja en writeLineUnique
+                    if (!/^\d+\.\d+(\s+|\.)/.test(text)) {
+                        lineText += 3; // Solo añadir espacio normal después de párrafos que no son encabezados numerados
+                    }
+                    break;
+                case 'UL':
+                    for (const liNode of node.childNodes) {
+                        lineText = await this.processElement(liNode, doc, lineText);
+                    }
+                    lineText += 2; // Reducido espacio después de la lista
+                    break;
+                case 'LI':
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    // Obtener el texto sin exceso de espacios en blanco
+                    const liText = node.textContent.trim().replace(/\s+/g, ' ');
+                    // Solo procesar si hay texto
+                    if (liText.length > 0) {
+                        lineText = this.writeLineUnique(doc, liText, lineText, true);
+                    } else {
+                        // Si no hay texto, avanzar un poco el lineText para que la lista no se comprima
+                        lineText += 2;
+                    }
+                    // No añadimos espacio extra aquí, se maneja en writeLineUnique y después de UL
+                    break;
+                case 'DIV':
+                    if (node.classList && node.classList.contains('text-center') && node.classList.contains('mb-3')) {
+                        const imgElement = node.querySelector('img');
+                        if (imgElement) {
+                            try {
+                                const img = await this.loadImage(imgElement.src);
+                                const pageWidth = doc.internal.pageSize.getWidth();
+                                const margin = 10;
+                                const maxWidth = pageWidth - (margin * 2);
+                                const imgWidth = Math.min(maxWidth, 112); // Reducimos a 3/4 del tamaño anterior (150*0.75=112.5)
+                                const imgHeight = (img.height * imgWidth) / img.width;
+                                
+                                // Comprobar si la imagen cabe en la página actual
+                                if (lineText + imgHeight + 20 > PAGE_BOTTOM_MARGIN) { // 10 antes + 10 después
+                                    doc.addPage();
+                                    this.newHeatherAndFooter(doc);
+                                    lineText = 20;
+                                }
+
+                                const xPos = (pageWidth - imgWidth) / 2;
+                                lineText += 6; // Reducido espacio antes de la imagen
+                                doc.addImage(img, 'PNG', xPos, lineText, imgWidth, imgHeight);
+                                lineText += imgHeight + 6; // Reducido espacio después de la imagen
+                            } catch (error) {
+                                console.error('Error loading image:', error);
+                            }
+                        }
+                    } else {
+                        // Procesar hijos de DIVs genéricos
+                        for (const childNode of node.childNodes) {
+                            lineText = await this.processElement(childNode, doc, lineText);
+                        }
+                    }
+                    break;
+                case 'IMG':
+                    // Manejar imágenes individuales si es necesario (si no están en un DIV)
+                    try {
+                        const img = await this.loadImage(node.src);
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const margin = 10;
+                        const maxWidth = pageWidth - (margin * 2);
+                        const imgWidth = Math.min(maxWidth, 112); // Reducimos a 3/4 del tamaño anterior (150*0.75=112.5)
+                        const imgHeight = (img.height * imgWidth) / img.width;
+
+                        if (lineText + imgHeight + 10 > PAGE_BOTTOM_MARGIN) { // Asumiendo 10 de espacio después
+                            doc.addPage();
+                            this.newHeatherAndFooter(doc);
+                            lineText = 20;
+                        }
+
+                        const xPos = (pageWidth - imgWidth) / 2; // Centrar por defecto
+                        // Podríamos necesitar lógica adicional para alinear si no está en un div centrado
+                        doc.addImage(img, 'PNG', xPos, lineText, imgWidth, imgHeight);
+                        lineText += imgHeight + 6; // Reducido espacio después de la imagen
+                    } catch (error) {
+                        console.error('Error loading standalone image:', error);
+                    }
+                    break;
+                default:
+                    for (const childNode of node.childNodes) {
+                        lineText = await this.processElement(childNode, doc, lineText);
+                    }
+                    break;
             }
         }
-    
-        if (lineSegment.length > 0) {
-            if(isList && firstLine){
-                doc.text('• ' + lineSegment, 10, lineText);
-            }else{
-                doc.text(lineSegment, 10, lineText);
+        return lineText;
+    }
+
+    writeLineUnique(doc, text, lineText, isListItem) {
+        const PAGE_BOTTOM_MARGIN = 270;
+        const TEXT_LEFT_MARGIN = isListItem ? 15 : 10;
+        
+        // Detectar si es un encabezado numerado (por ejemplo, "3.1 Título")
+        const isNumberedHeading = /^\d+\.\d+(\s+|\.)/.test(text);
+        
+        // Detectar si es información genética
+        const isGeneticInfo = /Gen:|ADNc:|Proteína:|Clasificación:|Genotipo:/.test(text);
+        
+        if (isNumberedHeading) {
+            // Aplicar formato especial para encabezados numerados
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            lineText += 5; // Aumentamos el espacio antes de encabezado numerado
+        }
+        
+        if (isGeneticInfo) {
+            // Dividir la información genética en partes para insertar saltos de línea
+            const geneticParts = [];
+            
+            // Usamos expresiones regulares para encontrar cada patrón y su contenido
+            const regexPatterns = [
+                /(Gen:\s*[^ADNc:]*)/, 
+                /(ADNc:\s*[^Proteína:]*)/, 
+                /(Proteína:\s*[^Clasificación:]*)/, 
+                /(Clasificación:\s*[^Genotipo:]*)/, 
+                /(Genotipo:\s*.*)/
+            ];
+            
+            let match;
+            for (const pattern of regexPatterns) {
+                match = text.match(pattern);
+                if (match && match[1]) {
+                    geneticParts.push(match[1].trim());
+                }
             }
-            lineText += 5;
-            lineText = this.checkIfNewPage(doc, lineText);
+            
+            // Si no pudimos dividir el texto adecuadamente, intentamos dividir por los términos clave
+            if (geneticParts.length === 0) {
+                // Patrones para identificar las diferentes partes de la información genética
+                const patterns = [
+                    'Gen:',
+                    'ADNc:',
+                    'Proteína:',
+                    'Clasificación:',
+                    'Genotipo:'
+                ];
+                
+                // Encontrar todas las ocurrencias de los patrones en el texto
+                let remainingText = text;
+                let startIndex = 0;
+                
+                for (let i = 0; i < patterns.length; i++) {
+                    const pattern = patterns[i];
+                    const index = remainingText.indexOf(pattern, startIndex);
+                    
+                    if (index !== -1) {
+                        // Si no es el primer patrón y hemos encontrado uno anterior
+                        if (i > 0 && startIndex < index) {
+                            geneticParts.push(remainingText.substring(startIndex, index).trim());
+                        }
+                        
+                        startIndex = index;
+                        
+                        // Si es el último patrón, añadir el resto del texto
+                        if (i === patterns.length - 1) {
+                            geneticParts.push(remainingText.substring(startIndex).trim());
+                        }
+                    }
+                }
+            }
+            
+            // Si aún no pudimos dividir el texto, usamos el original
+            if (geneticParts.length === 0) {
+                geneticParts.push(text);
+            }
+            
+            // Procesar cada parte por separado
+            for (const part of geneticParts) {
+                if (part.trim() === '') continue;
+                
+                // Verificar si hay suficiente espacio en la página actual
+                if (lineText > PAGE_BOTTOM_MARGIN) {
+                    doc.addPage();
+                    this.newHeatherAndFooter(doc);
+                    lineText = 20;
+                }
+                
+                doc.text(part.trim(), TEXT_LEFT_MARGIN, lineText);
+                lineText += 5; // Espacio entre líneas para información genética
+            }
+            
+            return lineText;
+        }
+        
+        // Procesamiento normal para texto que no es información genética
+        const lines = doc.splitTextToSize(text, 190);
+        
+        for (const line of lines) {
+            // Verificar si hay suficiente espacio en la página actual
+            if (lineText > PAGE_BOTTOM_MARGIN) {
+                doc.addPage();
+                this.newHeatherAndFooter(doc);
+                lineText = 20;
+            }
+            
+            doc.text(line, TEXT_LEFT_MARGIN, lineText);
+            lineText += 5; // Espacio estándar entre líneas
+        }
+        
+        // Restaurar formato normal si era un encabezado numerado
+        if (isNumberedHeading) {
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            lineText += 5; // Aumentamos el espacio adicional después de encabezado numerado
         }
 
         return lineText;

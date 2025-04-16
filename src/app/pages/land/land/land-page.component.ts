@@ -934,12 +934,38 @@ async translateInverseSummary(msg): Promise<string> {
             }
             let url = 'https://davlv9v24on.typeform.com/to/'+questionnaire+'#uuid='+this.paramForm+'&role='+this.actualRole+'&mode='+this.submode
             const qrCodeDataURL = await QRCode.toDataURL(url);
-            console.log(this.summaryPatient)
-            let tempSumary = this.summaryPatient.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF2(tempSumary, this.translate.store.currentLang, qrCodeDataURL)
-            /* let htmldemo={"text":"<div><br>  <h3>Resumen médico</h3><br>  <p>Los documentos que acaba de cargar son historiales médicos y ayudan a explicar su historial de salud, su estado actual y los tratamientos en curso. Este resumen está diseñado para ofrecerle una comprensión clara de su situación médica.</p><br>  <h4>Presentación del paciente</h4><br>  <p>El paciente es Sergio Isla Miranda, un varón de 14 años con un historial de afecciones médicas complejas, principalmente de naturaleza neurológica.</p><br>  <h4>Diagnósticos</h4><br>  <ul><br>    <li><strong>Epilepsia:</strong> Sergio padece epilepsia refractaria, concretamente Síndrome de Dravet, que es una forma grave de epilepsia de difícil tratamiento.</li><br>    <li><strong>Trastornos del desarrollo:</strong> Tiene un trastorno generalizado del desarrollo y un trastorno grave del lenguaje expresivo y comprensivo.</li><br>    <li><strong>Condiciones físicas:</strong> Sergio también tiene los pies muy arqueados (pies cavos), anemia ferropénica y una curvatura de la columna vertebral (escoliosis dorsolumbar).</li><br>  </ul><br>  <h4>Tratamiento y medicación</h4><br>  <ul><br>    <li><strong>Medicación:</strong> Sergio toma varios medicamentos, entre ellos Diacomit, Depakine, Noiafren y Fenfluramina para controlar su epilepsia.</li><br>    <li><strong>Suplementos:</strong> También toma suplementos de hierro para tratar su anemia.</li><br>    <li><strong>Terapias:</strong> Participa en fisioterapia, logopedia y educación física adaptada para favorecer su desarrollo y su salud física.</li><br>  </ul><br>  <h4>Otros</h4><br>  <ul><br>    <li>Sergio ha sufrido estados epilépticos, que son ataques prolongados que requieren atención médica inmediata.</li><br>    <li>Tiene una mutación en el gen SCN1A, que está asociada a su epilepsia.</li><br>    <li>Su plan de tratamiento se sigue de cerca y se ajusta según sea necesario para controlar su enfermedad.</li><br>    <li>Sergio requiere atención y seguimiento continuos debido a la gravedad de su epilepsia, que puede incluir emergencias potencialmente mortales como una parada cardiaca.</li><br>  </ul><br>  <p>Es importante que Sergio y sus cuidadores mantengan una comunicación abierta con los profesionales sanitarios para garantizar el mejor tratamiento posible de su enfermedad.</p><br></div>"};
-            htmldemo.text = htmldemo.text.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.store.currentLang, qrCodeDataURL)*/
+            
+            // Clonar el contenido HTML para el PDF sin afectar la visualización frontend
+            let pdfContent = this.summaryPatient;
+            
+            // Transformar el contenido para preservar los saltos de línea en el PDF
+            // 1. Convertir etiquetas <br> a formato que preserva saltos de línea en el PDF
+            pdfContent = pdfContent.replace(/<br\s*\/?>/gi, '<br>\n');
+            
+            // 2. Asegurar que cada párrafo tenga espacio adecuado (añadir espacio después de </p>)
+            pdfContent = pdfContent.replace(/<\/p>/gi, '</p>\n\n');
+            
+            // 3. Asegurar espacio después de encabezados
+            pdfContent = pdfContent.replace(/<\/h[1-6]>/gi, match => match + '\n');
+            
+            // 4. Asegurar que cada elemento de lista tenga su propio espacio
+            pdfContent = pdfContent.replace(/<\/li>/gi, '</li>\n');
+            
+            // 5. Eliminar posibles espacios en blanco múltiples
+            pdfContent = pdfContent.replace(/\s{3,}/g, '\n\n');
+            
+            const nonLatinLanguages = [
+              "am", "ar", "hy", "as", "av", "ba", "be", "bn", "bg", "my", "zh-CN", "cv", "ce", "ka", 
+              "el", "gu", "he", "hi", "ja", "kn", "kk", "km", "ko", "ky", "lo", "mk", "ml", "mn", 
+              "ne", "or", "pa", "fa", "ps", "ru", "sa", "si", "sd", "ta", "te", "th", "bo", "tk", 
+              "ug", "uk", "ur", "uz", "vi", "yi"
+            ];
+
+            if (nonLatinLanguages.includes(this.lang)) {
+              await this.jsPDFService.generateResultsPDF(pdfContent, this.translate.store.currentLang, qrCodeDataURL);
+            } else {
+              await this.jsPDFService.generateResultsPDF2(pdfContent, this.translate.store.currentLang, qrCodeDataURL);
+            }
           }
 
           async download2(){

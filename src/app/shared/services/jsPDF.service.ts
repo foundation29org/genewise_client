@@ -162,7 +162,17 @@ export class jsPDFService {
         this.newHeatherAndFooter(doc);
     
         const element = document.createElement('div');
+        // No eliminar los saltos de línea que ya están presentes en el HTML
         element.innerHTML = summary;
+        
+        // Aplicar estilos para asegurar que se respeten los espacios
+        element.style.whiteSpace = 'pre-wrap';
+        element.style.wordBreak = 'break-word';
+        element.style.fontFamily = 'Arial, Helvetica, sans-serif';
+        element.style.fontSize = '12px';
+        element.style.lineHeight = '1.5';
+        element.style.padding = '10px';
+
         const images = await this.generateImagesFromHTML(element, pageWidth, pageHeight - firstPageHeaderHeight - footerHeight);
         console.log(images);
         let pageNumber = 1;
@@ -213,6 +223,9 @@ export class jsPDFService {
     
         document.body.appendChild(element); // Asegúrate de que el elemento esté en el DOM
         
+        // Asegurar que todos los estilos estén aplicados antes de medir
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const totalHeight = element.scrollHeight;
         let currentHeight = 0;
     
@@ -234,6 +247,15 @@ export class jsPDFService {
                         scrollY: -currentHeight,
                         windowHeight: canvasHeight,
                         useCORS: true,
+                        logging: false, // Reducir mensajes de consola
+                        onclone: (clonedDoc) => {
+                            // Asegurar que los estilos se mantengan en el clon
+                            const clonedElement = clonedDoc.body.querySelector('div');
+                            if (clonedElement) {
+                                clonedElement.style.whiteSpace = 'pre-wrap';
+                                clonedElement.style.wordBreak = 'break-word';
+                            }
+                        }
                     });
     
                     const imgData = canvas.toDataURL('image/png');
@@ -300,7 +322,7 @@ export class jsPDFService {
     
         this.newHeatherAndFooter(doc);
     
-        // Parser del HTML
+        // Parser del HTML - No eliminar los saltos de línea que ya fueron añadidos
         const parser = new DOMParser();
         const docHTML = parser.parseFromString(summary, 'text/html');
         const elements = Array.from(docHTML.body.childNodes); // Obtener todos los nodos hijos del cuerpo
@@ -348,12 +370,16 @@ export class jsPDFService {
 
     async processElement(node, doc, lineText) {
         const PAGE_BOTTOM_MARGIN = 270; // Margen inferior estimado para evitar cortes
-        const MIN_SPACE_AFTER_HEADER = 8; // Reducido espacio después de título
+        const MIN_SPACE_AFTER_HEADER = 8; // Espacio después de título
         const HEADER_HEIGHT = 12; // Altura estimada de un título (5 antes + 7 después)
 
         if (node.nodeType === Node.TEXT_NODE) {
-            doc.setFontSize(9);
-            lineText = this.writeLineUnique(doc, node.textContent.trim(), lineText, false);
+            // Preservar los saltos de línea que puedan existir en los nodos de texto
+            const text = node.textContent;
+            if (text && text.trim().length > 0) {
+                doc.setFontSize(9);
+                lineText = this.writeLineUnique(doc, text, lineText, false);
+            }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             switch (node.tagName) {
                 case 'H1':
@@ -373,9 +399,16 @@ export class jsPDFService {
 
                     doc.setFontSize(fontSize);
                     doc.setFont(undefined, 'bold');
-                    lineText += 3; // Reducido espacio antes del título
+                    lineText += 3; // Espacio antes del título
                     doc.text(node.textContent.trim(), 10, lineText);
-                    lineText += 5; // Reducido espacio después del título
+                    
+                    // Más espacio después de títulos H1, espacio normal para otros
+                    if (node.tagName === 'H1') {
+                        lineText += 6; // Mayor espacio después de títulos de primer nivel
+                    } else {
+                        lineText += 4; // Espacio normal después de otros títulos
+                    }
+                    
                     doc.setFont(undefined, 'normal');
                     break;
                 case 'P':
@@ -390,14 +423,14 @@ export class jsPDFService {
                     
                     // El espacio adicional para encabezados numerados se maneja en writeLineUnique
                     if (!/^\d+\.\d+(\s+|\.)/.test(text)) {
-                        lineText += 3; // Solo añadir espacio normal después de párrafos que no son encabezados numerados
+                        lineText += 2.5; // Espacio adecuado después de párrafos
                     }
                     break;
                 case 'UL':
                     for (const liNode of node.childNodes) {
                         lineText = await this.processElement(liNode, doc, lineText);
                     }
-                    lineText += 2; // Reducido espacio después de la lista
+                    lineText += 2; // Espacio adecuado después de la lista
                     break;
                 case 'LI':
                     doc.setFontSize(9);
@@ -433,9 +466,9 @@ export class jsPDFService {
                                 }
 
                                 const xPos = (pageWidth - imgWidth) / 2;
-                                lineText += 6; // Reducido espacio antes de la imagen
+                                lineText += 4; // Espacio adecuado antes de la imagen
                                 doc.addImage(img, 'PNG', xPos, lineText, imgWidth, imgHeight);
-                                lineText += imgHeight + 6; // Reducido espacio después de la imagen
+                                lineText += imgHeight + 4; // Espacio adecuado después de la imagen
                             } catch (error) {
                                 console.error('Error loading image:', error);
                             }
@@ -466,7 +499,7 @@ export class jsPDFService {
                         const xPos = (pageWidth - imgWidth) / 2; // Centrar por defecto
                         // Podríamos necesitar lógica adicional para alinear si no está en un div centrado
                         doc.addImage(img, 'PNG', xPos, lineText, imgWidth, imgHeight);
-                        lineText += imgHeight + 6; // Reducido espacio después de la imagen
+                        lineText += imgHeight + 4; // Espacio adecuado después de la imagen
                     } catch (error) {
                         console.error('Error loading standalone image:', error);
                     }
@@ -481,122 +514,106 @@ export class jsPDFService {
         return lineText;
     }
 
-    writeLineUnique(doc, text, lineText, isListItem) {
+        writeLineUnique(doc, text, lineText, isListItem) {
         const PAGE_BOTTOM_MARGIN = 270;
         const TEXT_LEFT_MARGIN = isListItem ? 15 : 10;
-        
+        const LINE_HEIGHT = 3.8; // Espacio entre líneas más consistente
+        const MAX_WIDTH = 190; // Ancho máximo para texto normal
+        const LIST_ITEM_MAX_WIDTH = 175; // Ancho para items de lista
+
+        // Si el texto está vacío, devolver lineText sin cambios
+        if (!text || text.trim().length === 0) {
+            return lineText;
+        }
+
+        // Reiniciar estilo (por si acaso viene de un H tag procesado antes)
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+
+        // --- Inicio: Manejo específico para "Etiqueta: Valor" ---
+        let label = '';
+        let value = '';
+        const match = text.match(/^([\w\s]+:)\s*(.*)/); // Busca "Algo con letras y espacios seguido de ':'", captura etiqueta y valor
+
+        if (match && match[1] && match[2]) {
+             // Asumimos que la etiqueta viene de un <strong> en el HTML original.
+             // Como textContent lo elimina, aquí intentamos deducirlo y aplicar formato.
+            label = match[1].trim() + ' '; // Añade un espacio después del ':'
+            value = match[2].trim();
+        }
+        // --- Fin: Manejo específico ---
+
         // Detectar si es un encabezado numerado (por ejemplo, "3.1 Título")
         const isNumberedHeading = /^\d+\.\d+(\s+|\.)/.test(text);
-        
-        // Detectar si es información genética
-        const isGeneticInfo = /Gen:|ADNc:|Proteína:|Clasificación:|Genotipo:/.test(text);
-        
         if (isNumberedHeading) {
-            // Aplicar formato especial para encabezados numerados
             doc.setFontSize(11);
             doc.setFont(undefined, 'bold');
-            lineText += 5; // Aumentamos el espacio antes de encabezado numerado
+            lineText += 3; // Espacio antes de encabezado numerado
         }
-        
-        if (isGeneticInfo) {
-            // Dividir la información genética en partes para insertar saltos de línea
-            const geneticParts = [];
-            
-            // Usamos expresiones regulares para encontrar cada patrón y su contenido
-            const regexPatterns = [
-                /(Gen:\s*[^ADNc:]*)/, 
-                /(ADNc:\s*[^Proteína:]*)/, 
-                /(Proteína:\s*[^Clasificación:]*)/, 
-                /(Clasificación:\s*[^Genotipo:]*)/, 
-                /(Genotipo:\s*.*)/
-            ];
-            
-            let match;
-            for (const pattern of regexPatterns) {
-                match = text.match(pattern);
-                if (match && match[1]) {
-                    geneticParts.push(match[1].trim());
-                }
-            }
-            
-            // Si no pudimos dividir el texto adecuadamente, intentamos dividir por los términos clave
-            if (geneticParts.length === 0) {
-                // Patrones para identificar las diferentes partes de la información genética
-                const patterns = [
-                    'Gen:',
-                    'ADNc:',
-                    'Proteína:',
-                    'Clasificación:',
-                    'Genotipo:'
-                ];
-                
-                // Encontrar todas las ocurrencias de los patrones en el texto
-                let remainingText = text;
-                let startIndex = 0;
-                
-                for (let i = 0; i < patterns.length; i++) {
-                    const pattern = patterns[i];
-                    const index = remainingText.indexOf(pattern, startIndex);
-                    
-                    if (index !== -1) {
-                        // Si no es el primer patrón y hemos encontrado uno anterior
-                        if (i > 0 && startIndex < index) {
-                            geneticParts.push(remainingText.substring(startIndex, index).trim());
-                        }
-                        
-                        startIndex = index;
-                        
-                        // Si es el último patrón, añadir el resto del texto
-                        if (i === patterns.length - 1) {
-                            geneticParts.push(remainingText.substring(startIndex).trim());
-                        }
-                    }
-                }
-            }
-            
-            // Si aún no pudimos dividir el texto, usamos el original
-            if (geneticParts.length === 0) {
-                geneticParts.push(text);
-            }
-            
-            // Procesar cada parte por separado
-            for (const part of geneticParts) {
-                if (part.trim() === '') continue;
-                
-                // Verificar si hay suficiente espacio en la página actual
+
+        // Procesamiento para elementos de lista (con viñetas)
+        if (isListItem) {
+            const lines = doc.splitTextToSize(text, LIST_ITEM_MAX_WIDTH);
+            for (let i = 0; i < lines.length; i++) {
                 if (lineText > PAGE_BOTTOM_MARGIN) {
                     doc.addPage();
                     this.newHeatherAndFooter(doc);
                     lineText = 20;
                 }
-                
-                doc.text(part.trim(), TEXT_LEFT_MARGIN, lineText);
-                lineText += 5; // Espacio entre líneas para información genética
+                if (i === 0) {
+                    doc.text('•', 10, lineText); // Viñeta
+                }
+                doc.text(lines[i], TEXT_LEFT_MARGIN, lineText); // Texto con indentación
+                lineText += LINE_HEIGHT;
             }
-            
-            return lineText;
+            return lineText; // Salir temprano para items de lista
         }
-        
-        // Procesamiento normal para texto que no es información genética
-        const lines = doc.splitTextToSize(text, 190);
-        
+
+        // --- Procesamiento General (incluye el caso "Etiqueta: Valor") ---
+        let currentX = TEXT_LEFT_MARGIN;
+        const lines = doc.splitTextToSize(text, MAX_WIDTH); // Divide el texto completo
+
         for (const line of lines) {
-            // Verificar si hay suficiente espacio en la página actual
             if (lineText > PAGE_BOTTOM_MARGIN) {
                 doc.addPage();
                 this.newHeatherAndFooter(doc);
                 lineText = 20;
+                currentX = TEXT_LEFT_MARGIN; // Reiniciar X en nueva página
             }
-            
-            doc.text(line, TEXT_LEFT_MARGIN, lineText);
-            lineText += 5; // Espacio estándar entre líneas
+
+            // Si detectamos el patrón "Etiqueta: Valor" y estamos en la primera línea
+            if (label && value && line.startsWith(label.trim())) {
+                // 1. Dibuja la etiqueta en negrita
+                doc.setFont(undefined, 'bold');
+                doc.text(label, currentX, lineText);
+
+                // 2. Calcula el ancho de la etiqueta
+                const labelWidth = doc.getTextWidth(label);
+
+                // 3. Dibuja el valor normalmente, justo después de la etiqueta
+                doc.setFont(undefined, 'normal');
+                // Extrae la parte del valor que cabe en esta línea
+                const remainingLineText = line.substring(label.length);
+                doc.text(remainingLineText, currentX + labelWidth, lineText);
+
+                // Marcar que la etiqueta ya fue procesada para no repetirlo en saltos de línea raros
+                label = '';
+
+            } else {
+                 // Si no es el patrón especial, o es una línea subsiguiente, dibuja normal
+                doc.setFont(undefined, 'normal'); // Asegurarse de que esté normal
+                doc.text(line, currentX, lineText);
+            }
+
+            lineText += LINE_HEIGHT; // Incrementar Y para la siguiente línea
         }
-        
+
         // Restaurar formato normal si era un encabezado numerado
         if (isNumberedHeading) {
-            doc.setFontSize(9);
-            doc.setFont(undefined, 'normal');
-            lineText += 5; // Aumentamos el espacio adicional después de encabezado numerado
+            // No es necesario restaurar aquí si el default al inicio de la función es normal/9pt
+            // doc.setFontSize(9);
+            // doc.setFont(undefined, 'normal');
+            lineText += 3; // Espacio después de encabezado numerado
         }
 
         return lineText;

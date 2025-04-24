@@ -48,8 +48,6 @@ declare let html2canvas: any;
   ]
 })
 
-
-
 export class LandPageComponent implements OnInit, OnDestroy  {
 
   private subscription: Subscription = new Subscription();
@@ -101,16 +99,6 @@ export class LandPageComponent implements OnInit, OnDestroy  {
   stepPhoto = 1;
   capturedImage: any;
   icons: any = (datos as any).default;
-  timeline: any = [];
-  groupedEvents: any = [];
-
-  startDate: Date;
-  endDate: Date;
-  selectedEventType: string = null;
-  originalEvents: any[]; // Todos los eventos antes de aplicar el filtro
-  filteredEvents: any[];
-  isOldestFirst = false;
-  showFilters = false;
   allLangs: any;
 
   isEditable = false;
@@ -234,7 +222,6 @@ export class LandPageComponent implements OnInit, OnDestroy  {
     "zu": null
 };
 
-
   constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private cdr: ChangeDetectorRef, private langService: LangService) {
     this.screenWidth = window.innerWidth;
     if(sessionStorage.getItem('lang') == null){
@@ -338,9 +325,6 @@ finishDisclaimer() {
     this.submode = 'opt1';
     this.step = 1;
     this.docs = [];
-    this.timeline = [];
-    this.originalEvents = [];
-    this.groupedEvents = [];
     this.inheritancePatternImage = null;
     this.summaryPatient = '';
     this.paramForm = null;
@@ -668,9 +652,6 @@ async closeModal() {
 }
 
 madeSummary(role){
-  this.timeline = [];
-  this.originalEvents = [];
-  this.groupedEvents = [];
   this.context = [];
   this.inheritancePatternImage = null; // Reset inheritance pattern image before API call
   let nameFiles = [];
@@ -714,10 +695,10 @@ madeSummary(role){
             case 'autosomal recessive':
               this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
               break;
-            case 'x-linked dominant':
-              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
+            case 'X-linked dominant':
+              this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
               break;
-            case 'x-linked recessive':
+            case 'X-linked recessive':
               this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
               break;
             default:
@@ -739,14 +720,6 @@ madeSummary(role){
           this.callingSummary = false;
           this.toastr.error('', this.translate.instant("generics.error try again"));
         }
-        if(res.result2 != undefined){
-          if(res.result2.length > 0){
-            this.timeline = JSON.parse(res.result2);
-            this.originalEvents = this.timeline;
-            this.filterEvents();
-          }          
-        }
-        
 
       }, (err) => {
         this.callingSummary = false;
@@ -755,87 +728,6 @@ madeSummary(role){
         this.insightsService.trackException(err);
         this.toastr.error('', this.translate.instant("generics.error try again"));
       }));
-}
-
-private groupEventsByMonth(events: any[]): any[] {
-  const grouped = {};
-
-  events.forEach(event => {
-    const monthYear = this.getMonthYear(event.date).getTime(); // Usar getTime para agrupar
-    if (!grouped[monthYear]) {
-      grouped[monthYear] = [];
-    }
-    grouped[monthYear].push(event);
-  });
-
-  return Object.keys(grouped).map(key => ({
-    monthYear: new Date(Number(key)), // Convertir la clave de nuevo a fecha
-    events: grouped[key]
-  }));
-}
-
-
-private getMonthYear(dateStr: string): Date {
-  const date = new Date(dateStr);
-  return new Date(date.getFullYear(), date.getMonth(), 1); // Primer día del mes
-}
-
-
-filterEvents() {
-  this.cdr.detectChanges();
-  console.log(this.originalEvents);
-  console.log(this.startDate);
-  console.log(this.endDate);
-
-  const startDate = this.startDate ? new Date(this.startDate) : null;
-  const endDate = this.endDate ? new Date(this.endDate) : null;
-
-  const filtered = this.originalEvents.filter(event => {
-    const eventDate = new Date(event.date);
-
-    const isAfterStartDate = !startDate || eventDate >= startDate;
-    const isBeforeEndDate = !endDate || eventDate <= endDate;
-    console.log(this.selectedEventType)
-    const isEventTypeMatch = !this.selectedEventType || this.selectedEventType=='null' || !event.eventType || event.eventType === this.selectedEventType;
-    //const isEventTypeMatch = !this.selectedEventType || event.keyGeneticEvent === this.selectedEventType;
-
-
-    return isAfterStartDate && isBeforeEndDate && isEventTypeMatch;
-  });
-
-  this.groupedEvents = this.groupEventsByMonth(filtered);
-  this.orderEvents();
-}
-
-resetStartDate() {
-  this.startDate = null;
-  this.filterEvents();
-}
-resetEndDate() {
-  this.endDate = null;
-  this.filterEvents();
-}
-
-toggleEventOrder() {
-  this.isOldestFirst = !this.isOldestFirst; // Cambia el estado del orden
-  this.orderEvents();
-}
-
-orderEvents() {
-  this.groupedEvents.sort((a, b) => {
-    const dateA = a.monthYear.getTime(); // Convertir a timestamp
-    const dateB = b.monthYear.getTime(); // Convertir a timestamp
-    return this.isOldestFirst ? dateA - dateB : dateB - dateA;
-  });
-
-  this.groupedEvents.forEach(group => {
-    group.events.sort((a, b) => {
-      const dateA = new Date(a.date).getTime(); // Convertir a timestamp
-      const dateB = new Date(b.date).getTime(); // Convertir a timestamp
-      return this.isOldestFirst ? dateA - dateB : dateB - dateA;
-    });
-  });
-  console.log(this.groupedEvents)
 }
 
 async translateInverseSummary(msg): Promise<string> {
@@ -997,7 +889,7 @@ async translateInverseSummary(msg): Promise<string> {
           }
 
           newSummary(){
-            this.summaryPatient = '';
+    this.summaryPatient = '';
           }
 
           getLiteral(literal) {
@@ -1006,7 +898,7 @@ async translateInverseSummary(msg): Promise<string> {
 
         showPanelMedium(content) {
           this.medicalText = '';
-          this.summaryDx29 = '';
+    this.summaryDx29 = '';
           if (this.modalReference != undefined) {
               this.modalReference.close();
           }
@@ -1184,10 +1076,6 @@ async translateInverseSummary(msg): Promise<string> {
           }
         }
 
-        toggleFilters() {
-          this.showFilters = !this.showFilters;
-        }
-
         useSampleText() {
           
           this.medicalText = `Paciente: Juan Pérez
@@ -1286,7 +1174,7 @@ async translateInverseSummary(msg): Promise<string> {
       
       if(testLangText == ''){
         this.subscription.add(this.apiDx29ServerService.getDetectLanguage(testLangText)
-        .subscribe((res: any) => {
+      .subscribe((res: any) => {
           let jsontestLangText = [{ "Text": processedText }]
           this.subscription.add(this.apiDx29ServerService.getTranslationSegmentsInvert(res[0].language, this.selectedLanguage.code,jsontestLangText)
           .subscribe((res2: any) => {

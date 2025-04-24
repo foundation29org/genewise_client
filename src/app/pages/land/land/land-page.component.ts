@@ -651,83 +651,84 @@ async closeModal() {
   }
 }
 
-madeSummary(role){
+// New function that doesn't require a role parameter
+makeSummary() {
   this.context = [];
   this.inheritancePatternImage = null; // Reset inheritance pattern image before API call
   let nameFiles = [];
-    for (let doc of this.docs) {
-      if(doc.state == 'done'){
-        if(doc.summary){
-          this.context.push(doc.summary);
-        }else{
-          this.context.push(doc.medicalText);
-        }
-
-        
-        nameFiles.push(doc.dataFile.name);
+  for (let doc of this.docs) {
+    if(doc.state == 'done'){
+      if(doc.summary){
+        this.context.push(doc.summary);
+      }else{
+        this.context.push(doc.medicalText);
       }
-      if(doc.state == 'uploading'){
-        this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
-        return;
-      }
+      
+      nameFiles.push(doc.dataFile.name);
     }
-    
-  this.actualRole = role;
-  this.callingSummary = true;
-  this.summaryPatient = '';
-
-    if(this.context.length == 0){
-      this.callingSummary = false;
+    if(doc.state == 'uploading'){
       this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
       return;
     }
-    this.paramForm = this.myuuid+'/results/'+this.makeid(8)
-    var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": role, nameFiles: nameFiles, paramForm: this.paramForm };
-    this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
-      .subscribe(async (res: any) => {
-        // Process metadata to determine inheritance pattern image
-        if (res.metadata && res.metadata.genetic_inheritance_pattern) {
-          const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
-          switch (pattern) {
-            case 'autosomal dominant':
-              this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
-              break;
-            case 'autosomal recessive':
-              this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
-              break;
-            case 'X-linked dominant':
-              this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
-              break;
-            case 'X-linked recessive':
-              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
-              break;
-            default:
-              this.inheritancePatternImage = null;
-          }
-        } else {
-          this.inheritancePatternImage = null;
-        }
-        
-        if(res.result1 != undefined){
-          res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
-          res.result1 = res.result1.replace(/\\n\\n/g, '');
-          res.result1 = res.result1.replace(/\n/g, '');
-          this.translateInverseSummary(res.result1).catch(error => {
-            console.error('Error al procesar el mensaje:', error);
-            this.insightsService.trackException(error);
-          });
-        }else{
-          this.callingSummary = false;
-          this.toastr.error('', this.translate.instant("generics.error try again"));
-        }
+  }
+  
+  // No role required - use a unified role
+  this.actualRole = 'unified';
+  this.callingSummary = true;
+  this.summaryPatient = '';
 
-      }, (err) => {
+  if(this.context.length == 0){
+    this.callingSummary = false;
+    this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
+    return;
+  }
+  this.paramForm = this.myuuid+'/results/'+this.makeid(8)
+  var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": this.actualRole, nameFiles: nameFiles, paramForm: this.paramForm };
+  this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
+    .subscribe(async (res: any) => {
+      // Process metadata to determine inheritance pattern image
+      if (res.metadata && res.metadata.genetic_inheritance_pattern) {
+        const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
+        switch (pattern) {
+          case 'autosomal dominant':
+            this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
+            break;
+          case 'autosomal recessive':
+            this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
+            break;
+          case 'X-linked dominant':
+            this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
+            break;
+          case 'X-linked recessive':
+            this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
+            break;
+          default:
+            this.inheritancePatternImage = null;
+        }
+      } else {
+        this.inheritancePatternImage = null;
+      }
+      
+      if(res.result1 != undefined){
+        res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
+        res.result1 = res.result1.replace(/\\n\\n/g, '');
+        res.result1 = res.result1.replace(/\n/g, '');
+        this.translateInverseSummary(res.result1).catch(error => {
+          console.error('Error al procesar el mensaje:', error);
+          this.insightsService.trackException(error);
+        });
+      }else{
         this.callingSummary = false;
-        this.inheritancePatternImage = null; // Reset in case of error
-        console.log(err);
-        this.insightsService.trackException(err);
         this.toastr.error('', this.translate.instant("generics.error try again"));
-      }));
+      }
+
+    }, (err) => {
+      this.callingSummary = false;
+      this.inheritancePatternImage = null; // Reset in case of error
+      console.log(err);
+      this.insightsService.trackException(err);
+      this.toastr.error('', this.translate.instant("generics.error try again"));
+    }));
 }
 
 async translateInverseSummary(msg): Promise<string> {
@@ -761,14 +762,14 @@ async translateInverseSummary(msg): Promise<string> {
           }).join('');
 
           // Replace [IMAGEN] placeholder with the inheritance pattern image
-          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+          if (this.inheritancePatternImage && processedText.includes('[IMAGE]')) {
             const imageHtml = `<div class="text-center mb-3">
                                <img src="${this.inheritancePatternImage}" 
                                     alt="Patrón de herencia genética" 
                                     class="img-fluid" 
                                     style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
                                </div>`;
-            processedText = processedText.replace('[IMAGEN]', imageHtml);
+            processedText = processedText.replace('[IMAGE]', imageHtml);
           }
 
           this.summaryPatient = processedText;

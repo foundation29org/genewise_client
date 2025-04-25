@@ -113,47 +113,56 @@ export class jsPDFService {
         const footerHeight = 20;
         let currentHeight = margin + firstPageHeaderHeight;
     
-        // Cabecera inicial
+        // Cabecera inicial - centered elements
         const headerMiddleY = 20;
         
+        // Preload images to get dimensions
         const img_logo = new Image();
         img_logo.src = "assets/img/logo_sjd.png";
-        await this.loadImage(img_logo.src).then(img => {
-            const width = 54;
-            const height = (img.height * width) / img.width;
-            doc.addImage(img, 'PNG', 10, headerMiddleY - (height/2), width, height);
-        });
+        const logoF29 = new Image();
+        logoF29.src = "assets/img/logo-foundation-twentynine-footer.png";
         
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(10);
+        // Load and measure images
+        const [sjdImg, f29Img] = await Promise.all([
+            this.loadImage(img_logo.src),
+            this.loadImage(logoF29.src)
+        ]);
+        
+        // SJD logo dimensions
+        const sjdWidth = 54;
+        const sjdHeight = (sjdImg.height * sjdWidth) / sjdImg.width;
+        
+        // F29 logo dimensions
+        const f29Width = 32;
+        const f29Height = (f29Img.height * f29Width) / f29Img.width;
+        
+        // Get date text
         const actualDate = new Date();
         const dateHeader = this.getFormatDate(actualDate);
-        
-        const dateWidth = doc.getTextWidth(dateHeader);
         doc.setFont(undefined, 'bold');
-        doc.text(dateHeader, (pageWidth/2) - (dateWidth/2) + margin, headerMiddleY + 5);
+        doc.setFontSize(9);
+        const dateWidth = doc.getTextWidth(dateHeader);
+        
+        // Calculate total width of all elements with spacing
+        const spacing = 25; // Space between elements
+        const totalWidth = sjdWidth + spacing + dateWidth + spacing + f29Width;
+        
+        // Calculate starting X to center everything
+        const startX = (doc.internal.pageSize.getWidth() - totalWidth) / 2;
+        
+        // Draw SJD logo
+        doc.addImage(sjdImg, 'PNG', startX, headerMiddleY - (sjdHeight/2), sjdWidth, sjdHeight);
+        
+        // Draw date
+        doc.text(dateHeader, startX + sjdWidth + spacing, headerMiddleY);
+        
+        // Draw F29 logo
+        doc.addImage(f29Img, 'PNG', startX + sjdWidth + spacing + dateWidth + spacing, 
+                    headerMiddleY - (f29Height/2), f29Width, f29Height);
+        
         doc.setFont(undefined, 'normal');
-    
-        // Añadir QR
-        if (qrCodeDataURL == null) {
-            const img_qr = new Image();
-            img_qr.src = "assets/img/elements/qr.png";
-            doc.addImage(img_qr, 'PNG', 160, headerMiddleY - 15, 32, 30);
-            doc.setFontSize(8);
-            const qrUrl = 'https://nav29.org';
-            const urlWidth = doc.getTextWidth(qrUrl);
-            doc.text(qrUrl, 160 + (32/2) - (urlWidth/2), headerMiddleY + 20);
-        } else {
-            const img_qr = new Image();
-            img_qr.src = qrCodeDataURL;
-            doc.addImage(img_qr, 'PNG', 160, headerMiddleY - 15, 32, 30);
-            doc.setFontSize(8);
-            const qrText = this.translate.instant("pdf.Scan to rate the summary");
-            const textWidth = doc.getTextWidth(qrText);
-            doc.text(qrText, 160 + (32/2) - (textWidth/2), headerMiddleY + 20);
-        }
         doc.setFontSize(10);
-    
+        
         this.newHeatherAndFooter(doc);
     
         const element = document.createElement('div');
@@ -275,47 +284,56 @@ export class jsPDFService {
         const pageWidth = doc.internal.pageSize.getWidth();
         let lineText = 45;
     
+        // Cabecera inicial - centered elements
         const headerMiddleY = 20;
         
+        // Preload images to get dimensions
         const img_logo = new Image();
         img_logo.src = "assets/img/logo_sjd.png";
-        await this.loadImage(img_logo.src).then(img => {
-            const width = 54;
-            const height = (img.height * width) / img.width;
-            doc.addImage(img, 'png', 10, headerMiddleY - (height/2), width, height);
-        });
-    
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(10);
-    
+        const logoF29 = new Image();
+        logoF29.src = "assets/img/logo-foundation-twentynine-footer.png";
+        
+        // Load and measure images
+        const [sjdImg, f29Img] = await Promise.all([
+            this.loadImage(img_logo.src),
+            this.loadImage(logoF29.src)
+        ]);
+        
+        // SJD logo dimensions
+        const sjdWidth = 54;
+        const sjdHeight = (sjdImg.height * sjdWidth) / sjdImg.width;
+        
+        // F29 logo dimensions
+        const f29Width = 32;
+        const f29Height = (f29Img.height * f29Width) / f29Img.width;
+        
+        // Get date text
         const actualDate = new Date();
         const dateHeader = this.getFormatDate(actualDate);
-        
-        const dateWidth = doc.getTextWidth(dateHeader);
         doc.setFont(undefined, 'bold');
-        doc.text(dateHeader, (pageWidth/2) - (dateWidth/2), headerMiddleY + 5);
+        doc.setFontSize(9);
+        const dateWidth = doc.getTextWidth(dateHeader);
+        
+        // Calculate total width of all elements with spacing
+        const spacing = 25; // Space between elements
+        const totalWidth = sjdWidth + spacing + dateWidth + spacing + f29Width;
+        
+        // Calculate starting X to center everything
+        const startX = (doc.internal.pageSize.getWidth() - totalWidth) / 2;
+        
+        // Draw SJD logo
+        doc.addImage(sjdImg, 'png', startX, headerMiddleY - (sjdHeight/2), sjdWidth, sjdHeight);
+        
+        // Draw date
+        doc.text(dateHeader, startX + sjdWidth + spacing, headerMiddleY);
+        
+        // Draw F29 logo
+        doc.addImage(f29Img, 'png', startX + sjdWidth + spacing + dateWidth + spacing, 
+                    headerMiddleY - (f29Height/2), f29Width, f29Height);
+        
         doc.setFont(undefined, 'normal');
-    
-        if (qrCodeDataURL == null) {
-            const img_qr = new Image();
-            img_qr.src = "assets/img/elements/qr.png";
-            await this.loadImage(img_qr.src).then(img => {
-                doc.addImage(img, 'png', 160, headerMiddleY - 15, 32, 30);
-                doc.setFontSize(8);
-                const qrUrl = 'https://nav29.org';
-                const urlWidth = doc.getTextWidth(qrUrl);
-                doc.text(qrUrl, 160 + (32/2) - (urlWidth/2), headerMiddleY + 20);
-            });
-        } else {
-            await this.loadImage(qrCodeDataURL).then(img => {
-                doc.addImage(img, 'png', 160, headerMiddleY - 15, 32, 30);
-                doc.setFontSize(8);
-                const qrText = this.translate.instant("pdf.Scan to rate the summary");
-                const textWidth = doc.getTextWidth(qrText);
-                doc.text(qrText, 160 + (32/2) - (textWidth/2), headerMiddleY + 20);
-            });
-        }
-    
+        doc.setFontSize(10);
+        
         this.newHeatherAndFooter(doc);
     
         const parser = new DOMParser();
@@ -438,7 +456,7 @@ export class jsPDFService {
                                 const pageWidth = doc.internal.pageSize.getWidth();
                                 const margin = 10;
                                 const maxWidth = pageWidth - (margin * 2);
-                                const imgWidth = Math.min(maxWidth, 112);
+                                const imgWidth = Math.min(maxWidth, 150);
                                 const imgHeight = (img.height * imgWidth) / img.width;
                                 
                                 if (lineText + imgHeight + 20 > PAGE_BOTTOM_MARGIN) {
@@ -467,7 +485,7 @@ export class jsPDFService {
                         const pageWidth = doc.internal.pageSize.getWidth();
                         const margin = 10;
                         const maxWidth = pageWidth - (margin * 2);
-                        const imgWidth = Math.min(maxWidth, 112);
+                        const imgWidth = Math.min(maxWidth, 150);
                         const imgHeight = (img.height * imgWidth) / img.width;
 
                         if (lineText + imgHeight + 10 > PAGE_BOTTOM_MARGIN) {

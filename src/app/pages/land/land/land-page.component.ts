@@ -48,8 +48,6 @@ declare let html2canvas: any;
   ]
 })
 
-
-
 export class LandPageComponent implements OnInit, OnDestroy  {
 
   private subscription: Subscription = new Subscription();
@@ -101,16 +99,6 @@ export class LandPageComponent implements OnInit, OnDestroy  {
   stepPhoto = 1;
   capturedImage: any;
   icons: any = (datos as any).default;
-  timeline: any = [];
-  groupedEvents: any = [];
-
-  startDate: Date;
-  endDate: Date;
-  selectedEventType: string = null;
-  originalEvents: any[]; // Todos los eventos antes de aplicar el filtro
-  filteredEvents: any[];
-  isOldestFirst = false;
-  showFilters = false;
   allLangs: any;
 
   isEditable = false;
@@ -234,7 +222,6 @@ export class LandPageComponent implements OnInit, OnDestroy  {
     "zu": null
 };
 
-
   constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private cdr: ChangeDetectorRef, private langService: LangService) {
     this.screenWidth = window.innerWidth;
     if(sessionStorage.getItem('lang') == null){
@@ -338,9 +325,6 @@ finishDisclaimer() {
     this.submode = 'opt1';
     this.step = 1;
     this.docs = [];
-    this.timeline = [];
-    this.originalEvents = [];
-    this.groupedEvents = [];
     this.inheritancePatternImage = null;
     this.summaryPatient = '';
     this.paramForm = null;
@@ -667,175 +651,84 @@ async closeModal() {
   }
 }
 
-madeSummary(role){
-  this.timeline = [];
-  this.originalEvents = [];
-  this.groupedEvents = [];
+// New function that doesn't require a role parameter
+makeSummary() {
   this.context = [];
   this.inheritancePatternImage = null; // Reset inheritance pattern image before API call
   let nameFiles = [];
-    for (let doc of this.docs) {
-      if(doc.state == 'done'){
-        if(doc.summary){
-          this.context.push(doc.summary);
-        }else{
-          this.context.push(doc.medicalText);
-        }
-
-        
-        nameFiles.push(doc.dataFile.name);
+  for (let doc of this.docs) {
+    if(doc.state == 'done'){
+      if(doc.summary){
+        this.context.push(doc.summary);
+      }else{
+        this.context.push(doc.medicalText);
       }
-      if(doc.state == 'uploading'){
-        this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
-        return;
-      }
+      
+      nameFiles.push(doc.dataFile.name);
     }
-    
-  this.actualRole = role;
-  this.callingSummary = true;
-  this.summaryPatient = '';
-
-    if(this.context.length == 0){
-      this.callingSummary = false;
+    if(doc.state == 'uploading'){
       this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
       return;
     }
-    this.paramForm = this.myuuid+'/results/'+this.makeid(8)
-    var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": role, nameFiles: nameFiles, paramForm: this.paramForm };
-    this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
-      .subscribe(async (res: any) => {
-        // Process metadata to determine inheritance pattern image
-        if (res.metadata && res.metadata.genetic_inheritance_pattern) {
-          const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
-          switch (pattern) {
-            case 'autosomal dominant':
-              this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
-              break;
-            case 'autosomal recessive':
-              this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
-              break;
-            case 'x-linked dominant':
-              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
-              break;
-            case 'x-linked recessive':
-              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
-              break;
-            default:
-              this.inheritancePatternImage = null;
-          }
-        } else {
-          this.inheritancePatternImage = null;
-        }
-        
-        if(res.result1 != undefined){
-          res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
-          res.result1 = res.result1.replace(/\\n\\n/g, '');
-          res.result1 = res.result1.replace(/\n/g, '');
-          this.translateInverseSummary(res.result1).catch(error => {
-            console.error('Error al procesar el mensaje:', error);
-            this.insightsService.trackException(error);
-          });
-        }else{
-          this.callingSummary = false;
-          this.toastr.error('', this.translate.instant("generics.error try again"));
-        }
-        if(res.result2 != undefined){
-          if(res.result2.length > 0){
-            this.timeline = JSON.parse(res.result2);
-            this.originalEvents = this.timeline;
-            this.filterEvents();
-          }          
-        }
-        
+  }
+  
+  // No role required - use a unified role
+  this.actualRole = 'unified';
+  this.callingSummary = true;
+  this.summaryPatient = '';
 
-      }, (err) => {
+  if(this.context.length == 0){
+    this.callingSummary = false;
+    this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
+    return;
+  }
+  this.paramForm = this.myuuid+'/results/'+this.makeid(8)
+  var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": this.actualRole, nameFiles: nameFiles, paramForm: this.paramForm };
+  this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
+    .subscribe(async (res: any) => {
+      // Process metadata to determine inheritance pattern image
+      if (res.metadata && res.metadata.genetic_inheritance_pattern) {
+        const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
+        switch (pattern) {
+          case 'autosomal dominant':
+            this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
+            break;
+          case 'autosomal recessive':
+            this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
+            break;
+          case 'X-linked dominant':
+            this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
+            break;
+          case 'X-linked recessive':
+            this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
+            break;
+          default:
+            this.inheritancePatternImage = null;
+        }
+      } else {
+        this.inheritancePatternImage = null;
+      }
+      
+      if(res.result1 != undefined){
+        res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
+        res.result1 = res.result1.replace(/\\n\\n/g, '');
+        res.result1 = res.result1.replace(/\n/g, '');
+        this.translateInverseSummary(res.result1).catch(error => {
+          console.error('Error al procesar el mensaje:', error);
+          this.insightsService.trackException(error);
+        });
+      }else{
         this.callingSummary = false;
-        this.inheritancePatternImage = null; // Reset in case of error
-        console.log(err);
-        this.insightsService.trackException(err);
         this.toastr.error('', this.translate.instant("generics.error try again"));
-      }));
-}
+      }
 
-private groupEventsByMonth(events: any[]): any[] {
-  const grouped = {};
-
-  events.forEach(event => {
-    const monthYear = this.getMonthYear(event.date).getTime(); // Usar getTime para agrupar
-    if (!grouped[monthYear]) {
-      grouped[monthYear] = [];
-    }
-    grouped[monthYear].push(event);
-  });
-
-  return Object.keys(grouped).map(key => ({
-    monthYear: new Date(Number(key)), // Convertir la clave de nuevo a fecha
-    events: grouped[key]
-  }));
-}
-
-
-private getMonthYear(dateStr: string): Date {
-  const date = new Date(dateStr);
-  return new Date(date.getFullYear(), date.getMonth(), 1); // Primer día del mes
-}
-
-
-filterEvents() {
-  this.cdr.detectChanges();
-  console.log(this.originalEvents);
-  console.log(this.startDate);
-  console.log(this.endDate);
-
-  const startDate = this.startDate ? new Date(this.startDate) : null;
-  const endDate = this.endDate ? new Date(this.endDate) : null;
-
-  const filtered = this.originalEvents.filter(event => {
-    const eventDate = new Date(event.date);
-
-    const isAfterStartDate = !startDate || eventDate >= startDate;
-    const isBeforeEndDate = !endDate || eventDate <= endDate;
-    console.log(this.selectedEventType)
-    const isEventTypeMatch = !this.selectedEventType || this.selectedEventType=='null' || !event.eventType || event.eventType === this.selectedEventType;
-    //const isEventTypeMatch = !this.selectedEventType || event.keyGeneticEvent === this.selectedEventType;
-
-
-    return isAfterStartDate && isBeforeEndDate && isEventTypeMatch;
-  });
-
-  this.groupedEvents = this.groupEventsByMonth(filtered);
-  this.orderEvents();
-}
-
-resetStartDate() {
-  this.startDate = null;
-  this.filterEvents();
-}
-resetEndDate() {
-  this.endDate = null;
-  this.filterEvents();
-}
-
-toggleEventOrder() {
-  this.isOldestFirst = !this.isOldestFirst; // Cambia el estado del orden
-  this.orderEvents();
-}
-
-orderEvents() {
-  this.groupedEvents.sort((a, b) => {
-    const dateA = a.monthYear.getTime(); // Convertir a timestamp
-    const dateB = b.monthYear.getTime(); // Convertir a timestamp
-    return this.isOldestFirst ? dateA - dateB : dateB - dateA;
-  });
-
-  this.groupedEvents.forEach(group => {
-    group.events.sort((a, b) => {
-      const dateA = new Date(a.date).getTime(); // Convertir a timestamp
-      const dateB = new Date(b.date).getTime(); // Convertir a timestamp
-      return this.isOldestFirst ? dateA - dateB : dateB - dateA;
-    });
-  });
-  console.log(this.groupedEvents)
+    }, (err) => {
+      this.callingSummary = false;
+      this.inheritancePatternImage = null; // Reset in case of error
+      console.log(err);
+      this.insightsService.trackException(err);
+      this.toastr.error('', this.translate.instant("generics.error try again"));
+    }));
 }
 
 async translateInverseSummary(msg): Promise<string> {
@@ -869,14 +762,14 @@ async translateInverseSummary(msg): Promise<string> {
           }).join('');
 
           // Replace [IMAGEN] placeholder with the inheritance pattern image
-          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+          if (this.inheritancePatternImage && processedText.includes('[IMAGE]')) {
             const imageHtml = `<div class="text-center mb-3">
                                <img src="${this.inheritancePatternImage}" 
                                     alt="Patrón de herencia genética" 
                                     class="img-fluid" 
                                     style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
                                </div>`;
-            processedText = processedText.replace('[IMAGEN]', imageHtml);
+            processedText = processedText.replace('[IMAGE]', imageHtml);
           }
 
           this.summaryPatient = processedText;
@@ -934,12 +827,38 @@ async translateInverseSummary(msg): Promise<string> {
             }
             let url = 'https://davlv9v24on.typeform.com/to/'+questionnaire+'#uuid='+this.paramForm+'&role='+this.actualRole+'&mode='+this.submode
             const qrCodeDataURL = await QRCode.toDataURL(url);
-            console.log(this.summaryPatient)
-            let tempSumary = this.summaryPatient.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF2(tempSumary, this.translate.store.currentLang, qrCodeDataURL)
-            /* let htmldemo={"text":"<div><br>  <h3>Resumen médico</h3><br>  <p>Los documentos que acaba de cargar son historiales médicos y ayudan a explicar su historial de salud, su estado actual y los tratamientos en curso. Este resumen está diseñado para ofrecerle una comprensión clara de su situación médica.</p><br>  <h4>Presentación del paciente</h4><br>  <p>El paciente es Sergio Isla Miranda, un varón de 14 años con un historial de afecciones médicas complejas, principalmente de naturaleza neurológica.</p><br>  <h4>Diagnósticos</h4><br>  <ul><br>    <li><strong>Epilepsia:</strong> Sergio padece epilepsia refractaria, concretamente Síndrome de Dravet, que es una forma grave de epilepsia de difícil tratamiento.</li><br>    <li><strong>Trastornos del desarrollo:</strong> Tiene un trastorno generalizado del desarrollo y un trastorno grave del lenguaje expresivo y comprensivo.</li><br>    <li><strong>Condiciones físicas:</strong> Sergio también tiene los pies muy arqueados (pies cavos), anemia ferropénica y una curvatura de la columna vertebral (escoliosis dorsolumbar).</li><br>  </ul><br>  <h4>Tratamiento y medicación</h4><br>  <ul><br>    <li><strong>Medicación:</strong> Sergio toma varios medicamentos, entre ellos Diacomit, Depakine, Noiafren y Fenfluramina para controlar su epilepsia.</li><br>    <li><strong>Suplementos:</strong> También toma suplementos de hierro para tratar su anemia.</li><br>    <li><strong>Terapias:</strong> Participa en fisioterapia, logopedia y educación física adaptada para favorecer su desarrollo y su salud física.</li><br>  </ul><br>  <h4>Otros</h4><br>  <ul><br>    <li>Sergio ha sufrido estados epilépticos, que son ataques prolongados que requieren atención médica inmediata.</li><br>    <li>Tiene una mutación en el gen SCN1A, que está asociada a su epilepsia.</li><br>    <li>Su plan de tratamiento se sigue de cerca y se ajusta según sea necesario para controlar su enfermedad.</li><br>    <li>Sergio requiere atención y seguimiento continuos debido a la gravedad de su epilepsia, que puede incluir emergencias potencialmente mortales como una parada cardiaca.</li><br>  </ul><br>  <p>Es importante que Sergio y sus cuidadores mantengan una comunicación abierta con los profesionales sanitarios para garantizar el mejor tratamiento posible de su enfermedad.</p><br></div>"};
-            htmldemo.text = htmldemo.text.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.store.currentLang, qrCodeDataURL)*/
+            
+            // Clonar el contenido HTML para el PDF sin afectar la visualización frontend
+            let pdfContent = this.summaryPatient;
+            
+            // Transformar el contenido para preservar los saltos de línea en el PDF
+            // 1. Convertir etiquetas <br> a formato que preserva saltos de línea en el PDF
+            pdfContent = pdfContent.replace(/<br\s*\/?>/gi, '<br>\n');
+            
+            // 2. Asegurar que cada párrafo tenga espacio adecuado (añadir espacio después de </p>)
+            pdfContent = pdfContent.replace(/<\/p>/gi, '</p>\n\n');
+            
+            // 3. Asegurar espacio después de encabezados
+            pdfContent = pdfContent.replace(/<\/h[1-6]>/gi, match => match + '\n');
+            
+            // 4. Asegurar que cada elemento de lista tenga su propio espacio
+            pdfContent = pdfContent.replace(/<\/li>/gi, '</li>\n');
+            
+            // 5. Eliminar posibles espacios en blanco múltiples
+            pdfContent = pdfContent.replace(/\s{3,}/g, '\n\n');
+            
+            const nonLatinLanguages = [
+              "am", "ar", "hy", "as", "av", "ba", "be", "bn", "bg", "my", "zh-CN", "cv", "ce", "ka", 
+              "el", "gu", "he", "hi", "ja", "kn", "kk", "km", "ko", "ky", "lo", "mk", "ml", "mn", 
+              "ne", "or", "pa", "fa", "ps", "ru", "sa", "si", "sd", "ta", "te", "th", "bo", "tk", 
+              "ug", "uk", "ur", "uz", "vi", "yi"
+            ];
+
+            if (nonLatinLanguages.includes(this.lang)) {
+              await this.jsPDFService.generateResultsPDF(pdfContent, this.translate.store.currentLang, qrCodeDataURL);
+            } else {
+              await this.jsPDFService.generateResultsPDF2(pdfContent, this.translate.store.currentLang, qrCodeDataURL);
+            }
           }
 
           async download2(){
@@ -971,7 +890,7 @@ async translateInverseSummary(msg): Promise<string> {
           }
 
           newSummary(){
-            this.summaryPatient = '';
+    this.summaryPatient = '';
           }
 
           getLiteral(literal) {
@@ -980,7 +899,7 @@ async translateInverseSummary(msg): Promise<string> {
 
         showPanelMedium(content) {
           this.medicalText = '';
-          this.summaryDx29 = '';
+    this.summaryDx29 = '';
           if (this.modalReference != undefined) {
               this.modalReference.close();
           }
@@ -1158,10 +1077,6 @@ async translateInverseSummary(msg): Promise<string> {
           }
         }
 
-        toggleFilters() {
-          this.showFilters = !this.showFilters;
-        }
-
         useSampleText() {
           
           this.medicalText = `Paciente: Juan Pérez
@@ -1260,7 +1175,7 @@ async translateInverseSummary(msg): Promise<string> {
       
       if(testLangText == ''){
         this.subscription.add(this.apiDx29ServerService.getDetectLanguage(testLangText)
-        .subscribe((res: any) => {
+      .subscribe((res: any) => {
           let jsontestLangText = [{ "Text": processedText }]
           this.subscription.add(this.apiDx29ServerService.getTranslationSegmentsInvert(res[0].language, this.selectedLanguage.code,jsontestLangText)
           .subscribe((res2: any) => {

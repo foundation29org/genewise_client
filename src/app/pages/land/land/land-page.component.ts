@@ -731,6 +731,35 @@ makeSummary() {
     }));
 }
 
+// Añadir un método helper para reemplazar marcadores de imágenes
+private replaceImagePlaceholders(text: string): string {
+  let processedText = text;
+  
+  // Reemplazar marcador [IMG33] con imagen de patrón de herencia
+  if (this.inheritancePatternImage && processedText.includes('[IMG33]')) {
+    const imageHtml = `<div class="text-center mb-3">
+                      <img src="${this.inheritancePatternImage}" 
+                           alt="Patrón de herencia genética" 
+                           class="img-fluid" 
+                           style="max-height: 450px; display: block; margin-left: auto; margin-right: auto;"/>
+                      </div>`;
+    processedText = processedText.replace('[IMG33]', imageHtml);
+  }
+  
+  // Reemplazar marcador [IMG22] con imagen de explicación ADN
+  if (processedText.includes('[IMG22]')) {
+    const adnImageHtml = `<div class="text-center mb-3">
+                         <img src="assets/genimg/adn_explanation.png" 
+                              alt="Explicación ADN" 
+                              class="img-fluid" 
+                              style="max-height: 450px; display: block; margin-left: auto; margin-right: auto;"/>
+                         </div>`;
+    processedText = processedText.replace('[IMG22]', adnImageHtml);
+  }
+  
+  return processedText;
+}
+
 async translateInverseSummary(msg): Promise<string> {
   return new Promise((resolve, reject) => {
     // Función auxiliar para procesar el contenido de la tabla
@@ -761,16 +790,8 @@ async translateInverseSummary(msg): Promise<string> {
             }
           }).join('');
 
-          // Replace [IMAGEN] placeholder with the inheritance pattern image
-          if (this.inheritancePatternImage && processedText.includes('[IMAGE]')) {
-            const imageHtml = `<div class="text-center mb-3">
-                               <img src="${this.inheritancePatternImage}" 
-                                    alt="Patrón de herencia genética" 
-                                    class="img-fluid" 
-                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
-                               </div>`;
-            processedText = processedText.replace('[IMAGE]', imageHtml);
-          }
+          // Reemplazar marcadores de imágenes
+          processedText = this.replaceImagePlaceholders(processedText);
 
           this.summaryPatient = processedText;
           this.callingSummary = false;
@@ -782,16 +803,8 @@ async translateInverseSummary(msg): Promise<string> {
           // Process text on error as well
           let processedText = processNonTableContent(msg);
           
-          // Replace [IMAGEN] placeholder with the inheritance pattern image
-          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
-            const imageHtml = `<div class="text-center mb-3">
-                               <img src="${this.inheritancePatternImage}" 
-                                    alt="Patrón de herencia genética" 
-                                    class="img-fluid" 
-                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
-                               </div>`;
-            processedText = processedText.replace('[IMAGEN]', imageHtml);
-          }
+          // Reemplazar marcadores de imágenes
+          processedText = this.replaceImagePlaceholders(processedText);
           
           this.summaryPatient = processedText;
           this.callingSummary = false;
@@ -801,16 +814,8 @@ async translateInverseSummary(msg): Promise<string> {
       // Process text directly for English
       let processedText = processNonTableContent(msg);
       
-      // Replace [IMAGEN] placeholder with the inheritance pattern image
-      if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
-        const imageHtml = `<div class="text-center mb-3">
-                          <img src="${this.inheritancePatternImage}" 
-                                alt="Patrón de herencia genética" 
-                                class="img-fluid" 
-                                style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
-                          </div>`;
-        processedText = processedText.replace('[IMAGEN]', imageHtml);
-      }
+      // Reemplazar marcadores de imágenes
+      processedText = this.replaceImagePlaceholders(processedText);
       
       this.summaryPatient = processedText;
       this.callingSummary = false;

@@ -310,12 +310,12 @@
      "thanksvote": "¡Gracias por compartir tu opinión! Nos ayuda a ofrecerte un mejor servicio."
   },
   "about":{
-    "footer1": "Somos una organización sin ánimo de lucro que diseña y crea herramientas para la gestión de los pacientes de sus propios datos,",
-    "footer2": "revolucionando el diagnóstico y el manejo de las enfermedades raras. Damos el poder a los pacientes y los médicos para que utilicen",
-    "footer3": "sus datos médicos en su beneficio y el de la comunidad. Creemos que hay una forma mejor de hacer las cosas centrados en el paciente",
-    "footer4": "y sus datos.",
-    "footer5": "Apúntate ya a la revolución en:",
-    "footer6": "Para cualquier duda o consulta contacta con nosotros en"
+    "footer1": "Este informe forma parte de un proyecto de investigación llevado a cabo en el Hospital Sant Joan de Déu en colaboración con la",
+    "footer2": "Fundación 29.Este informe puede haber sido elaborado por inteligencia artificial. Su contenido tiene únicamente fines de",
+    "footer3": "investigación y no debe ser utilizado para la toma de decisiones clínicas. La información presentada no sustituye el juicio",
+    "footer4": "médico o diagnóstico profesional. Para cualquier duda sobre el significado clínico o los pasos a seguir, consulte con un",
+    "footer5": "profesional de genética clínica.",
+    "footer6": "Para cualquier pregunta acerca de nosotros, contáctanos en"
   },
   "events":{
     "title": "Eventos",

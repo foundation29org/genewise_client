@@ -1358,7 +1358,8 @@
     },
     "pdf":{
       "page": "Pagina",
-      "Scan to rate the summary": "Scansiona per valutare il riepilogo"
+      "Scan to rate the summary": "Scansiona per valutare il riepilogo",
+      "reportTitle": "Informazioni genetiche: analisi del rapporto genetico"
     },
     "open":{
        "Public sharing":"Condividere",

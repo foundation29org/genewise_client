@@ -115,56 +115,64 @@ export class jsPDFService {
         const footerHeight = 20;
         let currentHeight = margin + firstPageHeaderHeight;
     
-        // Cabecera inicial - centered elements
-        const headerMiddleY = 20;
-        
+        // -- Start Refactored Header --
+        const pageFullWidth = doc.internal.pageSize.getWidth();
+        const headerStartY = 15; // Starting Y position for header elements
+        const headerContentY = headerStartY + 5; // Y position for logo and date text
+        const titleY = headerStartY + 18; // Y position for the title
+        const lineY = headerStartY + 22; // Y position for the separator line
+
         // Preload images to get dimensions
         const img_logo = new Image();
         img_logo.src = "assets/img/logo_sjd.png";
-        const logoF29 = new Image();
-        logoF29.src = "assets/img/logo-foundation-twentynine-footer.png";
         
-        // Load and measure images
-        const [sjdImg, f29Img] = await Promise.all([
-            this.loadImage(img_logo.src),
-            this.loadImage(logoF29.src)
-        ]);
+        // Load and measure SJD image
+        const sjdImg = await this.loadImage(img_logo.src);
         
-        // SJD logo dimensions
-        const sjdWidth = 54;
+        // SJD logo dimensions (adjust width if needed)
+        const sjdWidth = 45; 
         const sjdHeight = (sjdImg.height * sjdWidth) / sjdImg.width;
         
-        // F29 logo dimensions
-        const f29Width = 32;
-        const f29Height = (f29Img.height * f29Width) / f29Img.width;
-        
+        // Draw SJD logo (aligned left with margin)
+        doc.addImage(sjdImg, 'PNG', margin, headerContentY - (sjdHeight / 2), sjdWidth, sjdHeight);
+
         // Get date text
         const actualDate = new Date();
         const dateHeader = this.getFormatDate(actualDate);
-        doc.setFont(undefined, 'bold');
         doc.setFontSize(9);
-        const dateWidth = doc.getTextWidth(dateHeader);
-        
-        // Calculate total width of all elements with spacing
-        const spacing = 25; // Space between elements
-        const totalWidth = sjdWidth + spacing + dateWidth + spacing + f29Width;
-        
-        // Calculate starting X to center everything
-        const startX = (doc.internal.pageSize.getWidth() - totalWidth) / 2;
-        
-        // Draw SJD logo
-        doc.addImage(sjdImg, 'PNG', startX, headerMiddleY - (sjdHeight/2), sjdWidth, sjdHeight);
-        
-        // Draw date
-        doc.text(dateHeader, startX + sjdWidth + spacing, headerMiddleY);
-        
-        // Draw F29 logo
-        doc.addImage(f29Img, 'PNG', startX + sjdWidth + spacing + dateWidth + spacing, 
-                    headerMiddleY - (f29Height/2), f29Width, f29Height);
-        
         doc.setFont(undefined, 'normal');
-        doc.setFontSize(10);
+        // Draw date (centered)
+        doc.text(dateHeader, pageFullWidth / 2, headerContentY, { align: 'center' });
+
+        // Draw Title
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        const reportTitle = this.translate.instant("pdf.reportTitle", {defaultValue: "Genewise Report"});
+        doc.text(reportTitle, pageFullWidth / 2, titleY, { align: 'center' });
+        doc.setFont(undefined, 'normal'); // Reset font style
+
+        // Draw separator line
+        doc.setDrawColor(180, 180, 180); // Light gray line
+        doc.line(margin, lineY, pageFullWidth - margin, lineY);
+
+        // Adjust starting height for the content based on the new header
+        // Note: The original currentHeight calculation might need adjustment if 
+        // firstPageHeaderHeight was used differently. Setting a fixed start.
+        currentHeight = lineY + 10; // Start content below the line + padding
+
+        // F29 logo dimensions (keep for potential future use, but don't draw)
+        /* 
+        const logoF29 = new Image();
+        logoF29.src = "assets/img/logo-foundation-twentynine-footer.png";
+        const f29Img = await this.loadImage(logoF29.src);
+        const f29Width = 32;
+        const f29Height = (f29Img.height * f29Width) / f29Img.width;
+        */
+        // -- End Refactored Header --
         
+        doc.setFontSize(10); // Reset font size for main content potentially
+        
+        // Keep the original footer logic call if needed for other pages
         this.newHeatherAndFooter(doc);
     
         const element = document.createElement('div');
@@ -286,56 +294,66 @@ export class jsPDFService {
         const pageWidth = doc.internal.pageSize.getWidth();
         let lineText = 45;
     
-        // Cabecera inicial - centered elements
-        const headerMiddleY = 20;
-        
+        // -- Start Refactored Header --
+        const margin = 10; // Define margin if not already available
+        const pageFullWidth = doc.internal.pageSize.getWidth();
+        const headerStartY = 15; // Starting Y position for header elements
+        const headerContentY = headerStartY + 5; // Y position for logo and date text
+        const titleY = headerStartY + 18; // Y position for the title
+        const lineY = headerStartY + 22; // Y position for the separator line
+
         // Preload images to get dimensions
         const img_logo = new Image();
         img_logo.src = "assets/img/logo_sjd.png";
-        const logoF29 = new Image();
-        logoF29.src = "assets/img/logo-foundation-twentynine-footer.png";
         
-        // Load and measure images
-        const [sjdImg, f29Img] = await Promise.all([
-            this.loadImage(img_logo.src),
-            this.loadImage(logoF29.src)
-        ]);
+        // Load and measure SJD image
+        const sjdImg = await this.loadImage(img_logo.src);
         
-        // SJD logo dimensions
-        const sjdWidth = 54;
+        // SJD logo dimensions (adjust width if needed)
+        const sjdWidth = 45; 
         const sjdHeight = (sjdImg.height * sjdWidth) / sjdImg.width;
         
-        // F29 logo dimensions
-        const f29Width = 32;
-        const f29Height = (f29Img.height * f29Width) / f29Img.width;
-        
+        // Draw SJD logo (aligned left with margin)
+        doc.addImage(sjdImg, 'PNG', margin, headerContentY - (sjdHeight / 2), sjdWidth, sjdHeight);
+
         // Get date text
         const actualDate = new Date();
         const dateHeader = this.getFormatDate(actualDate);
-        doc.setFont(undefined, 'bold');
         doc.setFontSize(9);
-        const dateWidth = doc.getTextWidth(dateHeader);
-        
-        // Calculate total width of all elements with spacing
-        const spacing = 25; // Space between elements
-        const totalWidth = sjdWidth + spacing + dateWidth + spacing + f29Width;
-        
-        // Calculate starting X to center everything
-        const startX = (doc.internal.pageSize.getWidth() - totalWidth) / 2;
-        
-        // Draw SJD logo
-        doc.addImage(sjdImg, 'png', startX, headerMiddleY - (sjdHeight/2), sjdWidth, sjdHeight);
-        
-        // Draw date
-        doc.text(dateHeader, startX + sjdWidth + spacing, headerMiddleY);
-        
-        // Draw F29 logo
-        doc.addImage(f29Img, 'png', startX + sjdWidth + spacing + dateWidth + spacing, 
-                    headerMiddleY - (f29Height/2), f29Width, f29Height);
-        
         doc.setFont(undefined, 'normal');
-        doc.setFontSize(10);
+        // Draw date (centered)
+        doc.text(dateHeader, pageFullWidth / 2, headerContentY, { align: 'center' });
+
+        // Draw Title
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        const reportTitle = this.translate.instant("pdf.reportTitle", {defaultValue: "Genewise Report"});
+        doc.text(reportTitle, pageFullWidth / 2, titleY, { align: 'center' });
+        doc.setFont(undefined, 'normal'); // Reset font style
+
+        // Draw separator line
+        doc.setDrawColor(180, 180, 180); // Light gray line
+        doc.line(margin, lineY, pageFullWidth - margin, lineY);
+
+        // Adjust starting Y position for the content
+        lineText = lineY + 10; // Start content below the line + padding
+
+        // F29 logo dimensions (keep for potential future use, but don't draw)
+        /* 
+        const logoF29 = new Image();
+        logoF29.src = "assets/img/logo-foundation-twentynine-footer.png";
+        const f29Img = await this.loadImage(logoF29.src);
+        const f29Width = 32;
+        const f29Height = (f29Img.height * f29Width) / f29Img.width;
+        */
+        // Comment out original F29 draw call
+        // doc.addImage(f29Img, 'png', startX + sjdWidth + spacing + dateWidth + spacing, 
+        //             headerMiddleY - (f29Height/2), f29Width, f29Height);
+        // -- End Refactored Header --
         
+        doc.setFontSize(10); // Reset font size for main content potentially
+        
+        // Keep the original footer logic call if needed for other pages
         this.newHeatherAndFooter(doc);
     
         const parser = new DOMParser();

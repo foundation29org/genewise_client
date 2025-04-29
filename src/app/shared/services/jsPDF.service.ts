@@ -77,9 +77,11 @@ export class jsPDFService {
         this.writelinePreFooter(doc, this.translate.instant("about.footer2"), lineText += 5);
         lineText = this.checkIfNewPage(doc, lineText);
         this.writelinePreFooter(doc, this.translate.instant("about.footer3"), lineText += 5);
+        lineText = this.checkIfNewPage(doc, lineText);
+        this.writelinePreFooter(doc, this.translate.instant("about.footer4"), lineText += 5);
         if(this.lang == 'es') {
             lineText = this.checkIfNewPage(doc, lineText);
-            this.writelinePreFooter(doc, this.translate.instant("about.footer4"), lineText += 5);
+            this.writelinePreFooter(doc, this.translate.instant("about.footer5"), lineText += 5);
         }     
         lineText = this.checkIfNewPage(doc, lineText);
         doc.setTextColor(0, 0, 0);

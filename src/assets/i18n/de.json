@@ -1358,7 +1358,8 @@
     },
     "pdf":{
       "page": "Seite",
-      "Scan to rate the summary": "Scannen Sie, um die Zusammenfassung zu bewerten"
+      "Scan to rate the summary": "Scannen Sie, um die Zusammenfassung zu bewerten",
+      "reportTitle": "Genewise Informationen: Analyse des Genberichts"
     },
     "open":{
        "Public sharing":"Teilen",

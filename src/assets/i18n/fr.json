@@ -1358,7 +1358,8 @@
     },
     "pdf":{
       "page": "Page",
-      "Scan to rate the summary": "Numériser pour évaluer le résumé"
+      "Scan to rate the summary": "Numériser pour évaluer le résumé",
+      "reportTitle": "Informations génétiques: analyse du rapport génétique"
     },
     "open":{
        "Public sharing":"Partager",

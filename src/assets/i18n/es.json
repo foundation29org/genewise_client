@@ -1362,7 +1362,8 @@
   },
   "pdf":{
     "page": "Página",
-    "Scan to rate the summary": "Escanee para calificar el resumen"
+    "Scan to rate the summary": "Escanee para calificar el resumen",
+    "reportTitle": "Información genética: análisis del informe genético"
   },
   "open":{
     "Public sharing": "Compartir",

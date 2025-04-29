@@ -1362,7 +1362,8 @@
   },
   "pdf":{
     "page": "Page",
-    "Scan to rate the summary": "Scan to rate the summary"
+    "Scan to rate the summary": "Scan to rate the summary",
+    "reportTitle": "Genewise insights: genetic report analysis"
   },
   "open":{
     "Public sharing": "Share",

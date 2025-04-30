@@ -588,7 +588,7 @@
     "Welcome to dx29": "Welcome to Nav29",
     "Please enter the basic data": "Add information about your condition and symptoms.",
     "Change": "Change",
-    "Foundation 29": "Foundation 29",
+    "Exemption of liability": "Exemption of liability",
     "Copied to the clipboard": "Copied to the clipboard",
     "Contact us!": "Contact us!",
     "Resend": "Resend",
@@ -1363,7 +1363,7 @@
   "pdf":{
     "page": "Page",
     "Scan to rate the summary": "Scan to rate the summary",
-    "reportTitle": "Genewise insights: genetic report analysis"
+    "reportTitle": "Genetic counselling report: genetic report analysis"
   },
   "open":{
     "Public sharing": "Share",

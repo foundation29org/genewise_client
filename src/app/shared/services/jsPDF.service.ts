@@ -71,7 +71,7 @@ export class jsPDFService {
     private writeAboutUs(doc, lineText) {
         lineText = this.checkIfNewPage(doc, lineText);
         doc.setFont(undefined, 'bold');
-        doc.text(this.translate.instant("generics.Foundation 29"), 10, lineText);
+        doc.text(this.translate.instant("generics.Exemption of liability"), 10, lineText);
         this.writelinePreFooter(doc, this.translate.instant("about.footer1"), lineText += 5);
         lineText = this.checkIfNewPage(doc, lineText);
         this.writelinePreFooter(doc, this.translate.instant("about.footer2"), lineText += 5);

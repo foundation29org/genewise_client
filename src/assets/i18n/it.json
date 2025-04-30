@@ -588,7 +588,7 @@
        "Welcome to dx29":"Benvenuto su Nav29",
        "Please enter the basic data":"Aggiungi informazioni sulla tua condizione e sui sintomi.",
        "Change":"Modificare",
-       "Foundation 29":"Fondazione 29",
+       "Exemption of liability":"Esenzione di responsabilità",
        "Copied to the clipboard":"Copiato negli appunti",
        "Contact us!":"Contattaci!",
        "Resend":"Rinviare",
@@ -1359,7 +1359,7 @@
     "pdf":{
       "page": "Pagina",
       "Scan to rate the summary": "Scansiona per valutare il riepilogo",
-      "reportTitle": "Informazioni genetiche: analisi del rapporto genetico"
+      "reportTitle": "Rapporto di consulenza genetica: analisi del rapporto genetico"
     },
     "open":{
        "Public sharing":"Condividere",

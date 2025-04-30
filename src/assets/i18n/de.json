@@ -588,7 +588,7 @@
        "Welcome to dx29":"Willkommen bei Nav29",
        "Please enter the basic data":"Fügen Sie Informationen über Ihren Zustand und Ihre Symptome hinzu.",
        "Change":"Veränderung",
-       "Foundation 29":"Gründung 29",
+       "Exemption of liability":"Haftungsausschluss",
        "Copied to the clipboard":"In die Zwischenablage kopiert",
        "Contact us!":"Kontaktiere uns!",
        "Resend":"Erneut senden",
@@ -1359,7 +1359,7 @@
     "pdf":{
       "page": "Seite",
       "Scan to rate the summary": "Scannen Sie, um die Zusammenfassung zu bewerten",
-      "reportTitle": "Genewise Informationen: Analyse des Genberichts"
+      "reportTitle": "Genetische Beratung: Analyse des Genberichts"
     },
     "open":{
        "Public sharing":"Teilen",

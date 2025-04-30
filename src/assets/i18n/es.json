@@ -311,7 +311,7 @@
   },
   "about":{
     "footer1": "Este informe forma parte de un proyecto de investigación llevado a cabo en el Hospital Sant Joan de Déu en colaboración con la",
-    "footer2": "Fundación 29.Este informe puede haber sido elaborado por inteligencia artificial. Su contenido tiene únicamente fines de",
+    "footer2": "Fundación 29. Este informe puede haber sido elaborado por inteligencia artificial. Su contenido tiene únicamente fines de",
     "footer3": "investigación y no debe ser utilizado para la toma de decisiones clínicas. La información presentada no sustituye el juicio",
     "footer4": "médico o diagnóstico profesional. Para cualquier duda sobre el significado clínico o los pasos a seguir, consulte con un",
     "footer5": "profesional de genética clínica.",
@@ -588,7 +588,7 @@
     "Welcome to dx29": "Bienvenido a Nav29",
     "Please enter the basic data": "Añade información sobre tu condición y tus síntomas.",
     "Change": "Cambiar",
-    "Foundation 29": "Fundación 29",
+    "Exemption of liability": "Exención de responsabilidad",
     "Copied to the clipboard": "Copiado al portapapeles",
     "Contact us!": "Contáctanos",
     "Resend": "Reenviar",
@@ -1363,7 +1363,7 @@
   "pdf":{
     "page": "Página",
     "Scan to rate the summary": "Escanee para calificar el resumen",
-    "reportTitle": "Información genética: análisis del informe genético"
+    "reportTitle": "Informe de asesoramiento genético: análisis del informe genético"
   },
   "open":{
     "Public sharing": "Compartir",

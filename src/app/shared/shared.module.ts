@@ -5,9 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { OverlayModule } from '@angular/cdk/overlay';
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { TranslateModule } from '@ngx-translate/core';
-import { PerfectScrollbarModule } from "ngx-perfect-scrollbar";
-import { ClickOutsideModule } from 'ng-click-outside';
+import { TranslatePipe, TranslateDirective } from '@ngx-translate/core';
 
 import { PipeModule } from 'app/shared/pipes/pipe.module';
 import {FirstCharacterDotPipe} from 'app/shared/pipes/first-character-dot.pipe';
@@ -17,14 +15,12 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatInputModule} from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
 
-//COMPONENTS
 import { NavbarD29Component } from "./navbar-dx29/navbar-dx29.component";
 import { HorizontalMenuComponent } from './horizontal-menu/horizontal-menu.component';
 import { VerticalMenuComponent } from "./vertical-menu/vertical-menu.component";
 import { CustomizerComponent } from './customizer/customizer.component';
 import { SafePipe } from 'app/shared/services/safe.pipe';
 
-//DIRECTIVES
 import { SidebarLinkDirective } from './directives/sidebar-link.directive';
 import { SidebarDropdownDirective } from './directives/sidebar-dropdown.directive';
 import { SidebarAnchorToggleDirective } from './directives/sidebar-anchor-toggle.directive';
@@ -33,9 +29,6 @@ import { TopMenuDirective } from './directives/topmenu.directive';
 import { TopMenuLinkDirective } from './directives/topmenu-link.directive';
 import { TopMenuDropdownDirective } from './directives/topmenu-dropdown.directive';
 import { TopMenuAnchorToggleDirective } from './directives/topmenu-anchor-toggle.directive';
-
-
-
 
 @NgModule({
     exports: [
@@ -47,7 +40,8 @@ import { TopMenuAnchorToggleDirective } from './directives/topmenu-anchor-toggle
         SidebarDirective,
         TopMenuDirective,
         NgbModule,
-        TranslateModule,
+        TranslatePipe,
+        TranslateDirective,
         SafePipe,
         FirstCharacterDotPipe,
         FirstCharacterHyphenPipe
@@ -56,12 +50,11 @@ import { TopMenuAnchorToggleDirective } from './directives/topmenu-anchor-toggle
         RouterModule,
         CommonModule,
         NgbModule,
-        TranslateModule,
+        TranslatePipe,
+        TranslateDirective,
         FormsModule,
         OverlayModule,
         ReactiveFormsModule ,
-        PerfectScrollbarModule,
-        ClickOutsideModule,
         PipeModule,
         MatDatepickerModule,
         MatInputModule,

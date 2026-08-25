@@ -5,9 +5,8 @@ import {
   Renderer2,
   AfterViewInit,
   OnDestroy,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  HostListener
+  HostListener,
+  effect
 } from "@angular/core";
 import { ConfigService } from "app/shared/services/config.service";
 import { DOCUMENT } from "@angular/common";
@@ -24,13 +23,12 @@ import { filter } from 'rxjs/operators';
     selector: 'app-land-page-layout',
     templateUrl: './land-page-layout.component.html',
     styleUrls: ['./land-page-layout.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Default
+    standalone: false
 })
 
 export class LandPageLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
   hideSidebar: boolean = true;
   overlayContent = false;
-  configSub: Subscription;
   layoutSub: Subscription;
   bgImage: string;
   bgColor: string;
@@ -52,12 +50,15 @@ export class LandPageLayoutComponent implements OnInit, AfterViewInit, OnDestroy
     @Inject(DOCUMENT) private document: Document,
     @Inject(WINDOW) private window: Window,
     private renderer: Renderer2,
-    private cdr: ChangeDetectorRef,
     private deviceService: DeviceDetectorService
   ) {
 
-    this.config = this.configService.templateConf;
+    this.config = this.configService.templateConf();
     this.innerWidth = window.innerWidth;
+    effect(() => {
+      this.config = this.configService.templateConf();
+      this.loadLayout();
+    });
 
     // On toggle sidebar menu
     this.layoutSub = layoutService.toggleSidebar$.subscribe(
@@ -73,15 +74,6 @@ export class LandPageLayoutComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnInit() {
-    this.configSub = this.configService.templateConf$.subscribe((templateConf) => {
-      if (templateConf) {
-        this.config = templateConf;
-      }
-      //load layout
-      this.loadLayout();
-      this.cdr.markForCheck();
-    });
-
     //hide overlay class on router change
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe((routeChange) => {
       if (this.config.layout.menuPosition === "Side" || this.displayOverlayMenu) { // Vertical Menu
@@ -99,10 +91,6 @@ export class LandPageLayoutComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnDestroy() {
-    //Unsubcribe subscriptions
-    if (this.configSub) {
-      this.configSub.unsubscribe();
-    }
     if (this.layoutSub) {
       this.layoutSub.unsubscribe();
     }
@@ -313,7 +301,7 @@ export class LandPageLayoutComponent implements OnInit, AfterViewInit, OnDestroy
 
   hideCompactMenuOnSmallScreen() {
     if (this.innerWidth < 1200) {
-      let conf = this.config;
+      let conf = structuredClone(this.configService.templateConf());
       conf.layout.sidebar.collapsed = false;
       this.configService.applyTemplateConfigChange({ layout: conf.layout });
     }

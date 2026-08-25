@@ -14,7 +14,8 @@ import { filter } from 'rxjs/operators';
   selector: 'app-navbar-dx29',
   templateUrl: './navbar-dx29.component.html',
   styleUrls: ['./navbar-dx29.component.scss'],
-  providers: [LangService]
+  providers: [LangService],
+  standalone: false
 })
 
 @Injectable()
@@ -73,7 +74,7 @@ export class NavbarD29Component implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.config = this.configService.templateConf;
+    this.config = this.configService.templateConf();
   }
 
   ngAfterViewInit() {
@@ -139,8 +140,8 @@ export class NavbarD29Component implements OnInit, AfterViewInit, OnDestroy {
             }
           }
           if (!foundlang) {
-            localStorage.setItem('lang', this.translate.store.currentLang);
-            this.currentLang = this.translate.store.currentLang;
+            localStorage.setItem('lang', this.translate.getCurrentLang());
+            this.currentLang = this.translate.getCurrentLang();
           }
         }
 

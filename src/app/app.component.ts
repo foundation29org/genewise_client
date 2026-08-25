@@ -14,7 +14,8 @@ import { InsightsService } from 'app/shared/services/azureInsights.service';
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
-    providers: [LangService]
+    providers: [LangService],
+    standalone: false
 })
 export class AppComponent implements OnInit, OnDestroy {
 
@@ -30,7 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           const browserLang: string = translate.getBrowserLang();
           this.translate.use(browserLang.match(/en|es|pt|de|fr|it/) ? browserLang : "en");
-          localStorage.setItem('lang', this.translate.store.currentLang);
+          localStorage.setItem('lang', this.translate.getCurrentLang());
           this.hasLocalLang = false;
         }
     

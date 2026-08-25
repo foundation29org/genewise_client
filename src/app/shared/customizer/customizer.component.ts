@@ -15,7 +15,8 @@ import { CustomizerService } from '../services/customizer.service';
 @Component({
   selector: "app-customizer",
   templateUrl: "./customizer.component.html",
-  styleUrls: ["./customizer.component.scss"]
+  styleUrls: ["./customizer.component.scss"],
+  standalone: false
 })
 export class CustomizerComponent implements OnInit, OnDestroy {
   @ViewChild("customizer") customizer: ElementRef;
@@ -32,7 +33,7 @@ export class CustomizerComponent implements OnInit, OnDestroy {
     public customizerService: CustomizerService,
   ) {
 
-    this.config = this.configService.templateConf;
+    this.config = this.configService.templateConf();
     this.isOpen = !this.config.layout.customizer.hidden;
 
     if (this.config.layout.sidebar.size) {

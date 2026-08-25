@@ -1,4 +1,3 @@
-import * as $ from 'jquery';
 import { NgModule, LOCALE_ID } from "@angular/core";
 import { BrowserModule } from '@angular/platform-browser';
 import es from '@angular/common/locales/es'
@@ -12,34 +11,23 @@ registerLocaleData(fr);
 registerLocaleData(de);
 registerLocaleData(it);
 registerLocaleData(pt);
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
 import { NgbModule } from "@ng-bootstrap/ng-bootstrap";
 import { ToastrModule } from "ngx-toastr";
-import { HTTP_INTERCEPTORS, HttpClientModule, HttpClient } from "@angular/common/http";
-import { TranslateModule, TranslateLoader } from "@ngx-translate/core";
-import { TranslateHttpLoader } from "@ngx-translate/http-loader";
-import { StoreModule } from "@ngrx/store";
-import { DragulaService } from "ng2-dragula";
-import { NgxSpinnerModule } from 'ngx-spinner';
-
-import {
-  PerfectScrollbarModule,
-  PERFECT_SCROLLBAR_CONFIG,
-  PerfectScrollbarConfigInterface
-} from 'ngx-perfect-scrollbar';
+import { HTTP_INTERCEPTORS, HttpClientModule } from "@angular/common/http";
+import { provideTranslateService } from "@ngx-translate/core";
+import { provideTranslateHttpLoader } from "@ngx-translate/http-loader";
 
 import { AppRoutingModule } from "./app-routing.module";
 import { SharedModule } from "./shared/shared.module";
-import * as fromApp from './store/app.reducer';
 import { AppComponent } from "./app.component";
 import { LandPageLayoutComponent } from "./layouts/land-page/land-page-layout.component";
 
 import { WINDOW_PROVIDERS } from './shared/services/window.service';
 import { SortService } from 'app/shared/services/sort.service';
 import { EventsService } from 'app/shared/services/events.service';
-import { DatePipe } from '@angular/common';
 import { DateService } from 'app/shared/services/date.service';
 import { SearchService } from 'app/shared/services/search.service';
 import { LocalizedDatePipe } from 'app/shared/services/localizedDatePipe.service';
@@ -49,14 +37,6 @@ import { Data } from 'app/shared/services/data.service';
 import { InsightsService } from 'app/shared/services/azureInsights.service';
 import { AuthInterceptor } from './shared/auth/auth.interceptor';
 
-const DEFAULT_PERFECT_SCROLLBAR_CONFIG: PerfectScrollbarConfigInterface = {
-  suppressScrollX: true,
-  wheelPropagation: false
-};
-
-export function createTranslateLoader(http: HttpClient) {
-  return new TranslateHttpLoader(http, "./assets/i18n/", ".json");
-}
 
 @NgModule({
   declarations: [AppComponent, LandPageLayoutComponent, SearchFilterPipe, HighlightSearch, LocalizedDatePipe],
@@ -64,34 +44,26 @@ export function createTranslateLoader(http: HttpClient) {
     BrowserModule,
     CommonModule,
     BrowserAnimationsModule,
-    StoreModule.forRoot(fromApp.appReducer),
     AppRoutingModule,
     SharedModule,
     HttpClientModule,
     ToastrModule.forRoot(),
-    NgbModule,
-    NgxSpinnerModule,
-    TranslateModule.forRoot({
-      loader: {
-        provide: TranslateLoader,
-        useFactory: createTranslateLoader,
-        deps: [HttpClient]
-      }
-    }),
-    PerfectScrollbarModule
+    NgbModule
   ],
   providers: [
+    provideTranslateService({
+      fallbackLang: 'en',
+      lang: 'en'
+    }),
+    provideTranslateHttpLoader({
+      prefix: "./assets/i18n/",
+      suffix: ".json"
+    }),
     {
-      provide : HTTP_INTERCEPTORS,
+      provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
-      multi   : true
+      multi: true
     },
-    DragulaService,
-    {
-      provide: PERFECT_SCROLLBAR_CONFIG,
-      useValue: DEFAULT_PERFECT_SCROLLBAR_CONFIG
-    },
-    { provide: PERFECT_SCROLLBAR_CONFIG, useValue: DEFAULT_PERFECT_SCROLLBAR_CONFIG },
     WINDOW_PROVIDERS,
     { provide: LOCALE_ID, useValue: 'es-ES' },
     SortService,

@@ -22,7 +22,9 @@
       "a physician": "Um médico",
       "Summarise the transcript": "Resumir a transcrição",
       "Written for": "Escrito para",
-      "Generate summary": "Gerar resumo",
+      "Adults": "Adultos",
+      "Adolescents": "Adolescentes",
+      "Children": "Crianças",
       "New summary": "Novo resumo",
       "Evaluate summary": "Avaliar resumo",
       "No documents to summarize": "Não há documentos para resumir ou você não terminou de extrair o texto.",
@@ -588,7 +590,7 @@
        "Welcome to dx29":"Bem-vindo ao Nav29",
        "Please enter the basic data":"Adicione informações sobre sua condição e sintomas.",
        "Change":"Mudar",
-       "Exemption of liability":"Isenção de responsabilidade",
+       "Foundation 29":"Fundação 29",
        "Copied to the clipboard":"Copiado para a área de transferência",
        "Contact us!":"Contate-Nos!",
        "Resend":"Reenviar",
@@ -1358,8 +1360,7 @@
     },
     "pdf":{
       "page": "Página",
-      "Scan to rate the summary": "Digitalize para avaliar o resumo",
-      "reportTitle": "Relatório de aconselhamento genético: análise do relatório genético"
+      "Scan to rate the summary": "Digitalize para avaliar o resumo"
     },
     "open":{
        "Public sharing":"Compartilhar",

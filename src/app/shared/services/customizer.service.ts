@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ConfigService } from './config.service';
-import { _ } from 'core-js';
+import { ConfigService, ITemplateConfig } from './config.service';
 
 @Injectable({
   providedIn: "root"
@@ -182,6 +181,10 @@ export class CustomizerService {
     this.getData();
   }
 
+  private currentConfig(): ITemplateConfig {
+    return structuredClone(this.config.templateConf());
+  }
+
   getData() {
     this.lightDarkLayoutGradientBGColors = this.getlightDarkLayoutGradientBGColors();
     this.lightDarkLayoutSolidBGColors = this.getlightDarkLayoutSolidBGColors();
@@ -191,41 +194,46 @@ export class CustomizerService {
   }
 
   getlightDarkLayoutGradientBGColors() {
-    return this.light_dark_colors.filter(_ => _.type === 'gradient')
+    const layoutColor = this.config.templateConf().layout.sidebar.backgroundColor;
+    return this.light_dark_colors.filter(color => color.type === 'gradient')
       .map(color => {
-        color.active = (color.code === this.config.templateConf.layout.sidebar.backgroundColor);
+        color.active = (color.code === layoutColor);
         return { ...color };
       });
   }
 
   getlightDarkLayoutSolidBGColors() {
-    return this.light_dark_colors.filter(_ => _.type === 'solid')
+    const layoutColor = this.config.templateConf().layout.sidebar.backgroundColor;
+    return this.light_dark_colors.filter(color => color.type === 'solid')
       .map(color => {
-        color.active = (color.code === this.config.templateConf.layout.sidebar.backgroundColor);
+        color.active = (color.code === layoutColor);
         return { ...color };
       });
   }
 
   getTransparentLayoutBGColors() {
+    const layoutColor = this.config.templateConf().layout.sidebar.backgroundColor;
     return this.transparent_colors
       .map(color => {
-        color.active = (color.class === this.config.templateConf.layout.sidebar.backgroundColor);
+        color.active = (color.class === layoutColor);
         return { ...color };
       });
   }
 
   GetTransparentLayoutBGColorsWithShades() {
+    const layoutColor = this.config.templateConf().layout.sidebar.backgroundColor;
     return this.transparent_colors_with_shade
       .map(color => {
-        color.active = (color.class === this.config.templateConf.layout.sidebar.backgroundColor);
+        color.active = (color.class === layoutColor);
         return { ...color };
       });
   }
 
   getLightDarkLayoutBGImages() {
+    const imageUrl = this.config.templateConf().layout.sidebar.backgroundImageURL;
     return this.light_dark_bg_images
       .map(image => {
-        image.active = (image.src === this.config.templateConf.layout.sidebar.backgroundImageURL);
+        image.active = (image.src === imageUrl);
         return { ...image };
       });
   }
@@ -235,7 +243,7 @@ export class CustomizerService {
   //called when click to change on any Gradient/Solid color for Light & Dark layout in customizer
   changeSidebarBGColor(color) {
 
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     conf.layout.sidebar.backgroundColor = color.code;
 
     this.config.applyTemplateConfigChange({ layout: conf.layout });
@@ -247,7 +255,7 @@ export class CustomizerService {
   //called when click to change on any Transparent color for Transparent layout in customizer
   changeSidebarTransparentBGColor(color) {
 
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     conf.layout.sidebar.backgroundColor = color.class;
     conf.layout.sidebar.backgroundImage = false;
     conf.layout.sidebar.backgroundImageURL = '';
@@ -261,7 +269,7 @@ export class CustomizerService {
   //called when click to change on any image for Light & Dark layout in customizer
   changeSidebarBgImage(image) {
 
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     conf.layout.sidebar.backgroundImageURL = image.src;
 
     this.config.applyTemplateConfigChange({ layout: conf.layout });
@@ -271,7 +279,7 @@ export class CustomizerService {
   }
 
   bgImageDisplay(e: any) {
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     if (e.target.checked) {
       conf.layout.sidebar.backgroundImage = true;
     } else {
@@ -282,7 +290,7 @@ export class CustomizerService {
   }
 
   toggleCompactMenu(e: any) {
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     if (e.target.checked) {
       conf.layout.sidebar.collapsed = true;
     } else {
@@ -294,26 +302,26 @@ export class CustomizerService {
 
 
   changeSidebarWidth(value: string) {
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     conf.layout.sidebar.size = value;
     this.config.applyTemplateConfigChange({ layout: conf.layout });
   }
 
   toggleNavbarType(value: string) {
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     conf.layout.navbar.type = value;
     this.config.applyTemplateConfigChange({ layout: conf.layout });
   }
 
   // position: "Side" for vertical menu and position: "Top" for horizontal menu
   toggleMenuPosition(position: string) {
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     conf.layout.menuPosition = position;
     this.config.applyTemplateConfigChange({ layout: conf.layout });
   }
 
   switchLayout(layout: string, isBgImageDisplay: boolean) {
-    let conf = this.config.templateConf;
+    let conf = this.currentConfig();
     if(layout.toLowerCase() === 'light') {
       conf.layout.variant = 'Light';
       conf.layout.sidebar.backgroundImageURL = this.light_dark_bg_images[0].src;

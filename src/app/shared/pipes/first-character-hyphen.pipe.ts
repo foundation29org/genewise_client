@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'firstCharacterHyphen'
+  name: 'firstCharacterHyphen',
+  standalone: false
 })
 export class FirstCharacterHyphenPipe implements PipeTransform {
   transform(value: string): string {

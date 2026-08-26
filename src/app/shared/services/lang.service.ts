@@ -4,6 +4,7 @@ import { HttpClient } from "@angular/common/http";
 import { environment } from 'environments/environment';
 import { SortService} from 'app/shared/services/sort.service';
 import { InsightsService } from 'app/shared/services/azureInsights.service';
+import { throwError } from 'rxjs';
 import { catchError, map} from 'rxjs/operators'
 @Injectable()
 export class LangService {
@@ -25,7 +26,7 @@ export class LangService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -42,7 +43,7 @@ export class LangService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -57,7 +58,7 @@ export class LangService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }

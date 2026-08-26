@@ -1,6 +1,6 @@
 import {
   Component, OnInit, ViewChild, OnDestroy,
-  ElementRef, AfterViewInit, ChangeDetectorRef, HostListener
+  ElementRef, AfterViewInit, HostListener, effect
 } from "@angular/core";
 import { ROUTES } from './vertical-menu-routes.config';
 import { HROUTES } from '../horizontal-menu/navigation-routes.config';
@@ -14,7 +14,8 @@ import { LayoutService } from '../services/layout.service';
 @Component({
   selector: "app-sidebar",
   templateUrl: "./vertical-menu.component.html",
-  animations: customAnimations
+  animations: customAnimations,
+  standalone: false
 })
 export class VerticalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -25,7 +26,6 @@ export class VerticalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
   public config: any = {};
   protected innerWidth: any;
   layoutSub: Subscription;
-  configSub: Subscription;
   perfectScrollbarEnable = true;
   collapseSidebar = false;
   resizeTimeout;
@@ -34,12 +34,15 @@ export class VerticalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
     public translate: TranslateService,
     private layoutService: LayoutService,
     private configService: ConfigService,
-    private cdr: ChangeDetectorRef,
     private deviceService: DeviceDetectorService
   ) {
-    this.config = this.configService.templateConf;
+    this.config = this.configService.templateConf();
     this.innerWidth = window.innerWidth;
     this.isTouchDevice();
+    effect(() => {
+      this.config = this.configService.templateConf();
+      this.loadLayout();
+    });
   }
 
 
@@ -48,15 +51,6 @@ export class VerticalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-
-    this.configSub = this.configService.templateConf$.subscribe((templateConf) => {
-      if (templateConf) {
-        this.config = templateConf;
-      }
-      this.loadLayout();
-      this.cdr.markForCheck();
-
-    });
 
     this.layoutSub = this.layoutService.overlaySidebarToggle$.subscribe(
       collapse => {
@@ -109,8 +103,8 @@ export class VerticalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleSidebar() {
-    let conf = this.config;
-    conf.layout.sidebar.collapsed = !this.config.layout.sidebar.collapsed;
+    let conf = structuredClone(this.configService.templateConf());
+    conf.layout.sidebar.collapsed = !conf.layout.sidebar.collapsed;
     this.configService.applyTemplateConfigChange({ layout: conf.layout });
 
     setTimeout(() => {
@@ -146,9 +140,6 @@ export class VerticalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     if (this.layoutSub) {
       this.layoutSub.unsubscribe();
-    }
-    if (this.configSub) {
-      this.configSub.unsubscribe();
     }
 
   }

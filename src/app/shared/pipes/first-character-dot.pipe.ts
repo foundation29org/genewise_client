@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-  name: 'firstCharacterDot'
+  name: 'firstCharacterDot',
+  standalone: false
 })
 export class FirstCharacterDotPipe implements PipeTransform {
   transform(value: string): string {

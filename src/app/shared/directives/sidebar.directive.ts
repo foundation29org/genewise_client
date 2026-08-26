@@ -1,10 +1,9 @@
-import { Directive, HostListener, ChangeDetectorRef, OnInit, OnDestroy, HostBinding, Input, AfterViewInit } from '@angular/core';
+import { Directive, HostListener, OnInit, OnDestroy, HostBinding, Input, AfterViewInit, effect } from '@angular/core';
 import { SidebarLinkDirective } from './sidebar-link.directive';
-import { Subscription } from 'rxjs';
 import { ConfigService } from '../services/config.service';
 import { Router } from '@angular/router';
 
-@Directive({ selector: '[appSidebar]' })
+@Directive({ selector: '[appSidebar]', standalone: false })
 export class SidebarDirective implements OnInit, AfterViewInit, OnDestroy {
 
   @HostBinding("class.expanded")
@@ -17,33 +16,26 @@ export class SidebarDirective implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected navlinks: Array<SidebarLinkDirective> = [];
-  layoutSub: Subscription;
   public config: any = {};
   mouseEnter = false;
   sidebarExpanded = true;
   protected _navExpanded: boolean;
   protected innerWidth: any;
 
-  constructor(private cdr: ChangeDetectorRef, private router: Router, private configService: ConfigService) {
-    this.config = this.configService.templateConf;
+  constructor(private router: Router, private configService: ConfigService) {
+    this.config = this.configService.templateConf();
     this.sidebarExpanded = !this.config.layout.sidebar.collapsed;
+    effect(() => {
+      this.config = this.configService.templateConf();
+      this.loadLayout();
+    });
   }
 
   ngOnInit() {
     this.innerWidth = window.innerWidth;
-    this.layoutSub = this.configService.templateConf$.subscribe((templateConf) => {
-      if (templateConf) {
-        this.config = templateConf;
-      }
-      this.loadLayout();
-      this.cdr.markForCheck();
-    });
   }
 
   ngOnDestroy() {
-    if (this.layoutSub) {
-      this.layoutSub.unsubscribe();
-    }
   }
 
   //load layout when changes in the config

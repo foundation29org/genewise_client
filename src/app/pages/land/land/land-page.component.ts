@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, TemplateRef, NgZone, ChangeDetectorRef  } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, TemplateRef, NgZone, signal } from '@angular/core';
 import { trigger, transition, animate } from '@angular/animations';
 import { style } from '@angular/animations';
 import { TranslateService } from '@ngx-translate/core';
@@ -18,7 +18,7 @@ import { jsPDF } from "jspdf";
 import * as QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 declare var webkitSpeechRecognition: any;
-import * as datos from './icons.json';
+import iconsData from './icons.json';
 declare let html2canvas: any;
 
 @Component({
@@ -26,6 +26,7 @@ declare let html2canvas: any;
   templateUrl: './land-page.component.html',
   styleUrls: ['./land-page.component.scss'],
   providers: [ApiDx29ServerService, jsPDFService, LangService],
+  standalone: false,
   animations: [
     trigger('slideInOut', [
       transition(':enter', [
@@ -47,6 +48,8 @@ declare let html2canvas: any;
     ])
   ]
 })
+
+
 
 export class LandPageComponent implements OnInit, OnDestroy  {
 
@@ -98,7 +101,17 @@ export class LandPageComponent implements OnInit, OnDestroy  {
   private audioOutro = new Audio('assets/audio/sonido2.mp4');
   stepPhoto = 1;
   capturedImage: any;
-  icons: any = (datos as any).default;
+  icons: any = iconsData;
+  timeline: any = [];
+  groupedEvents = signal<any[]>([]);
+
+  startDate = signal<Date | null>(null);
+  endDate = signal<Date | null>(null);
+  selectedEventType = signal<string | null>(null);
+  originalEvents: any[]; // Todos los eventos antes de aplicar el filtro
+  filteredEvents: any[];
+  isOldestFirst = false;
+  showFilters = false;
   allLangs: any;
 
   isEditable = false;
@@ -222,13 +235,14 @@ export class LandPageComponent implements OnInit, OnDestroy  {
     "zu": null
 };
 
-  constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private cdr: ChangeDetectorRef, private langService: LangService) {
+
+  constructor(private http: HttpClient, public translate: TranslateService, public toastr: ToastrService, private modalService: NgbModal, private apiDx29ServerService: ApiDx29ServerService, private eventsService: EventsService, public insightsService: InsightsService, private clipboard: Clipboard, public jsPDFService: jsPDFService, private ngZone: NgZone, private langService: LangService) {
     this.screenWidth = window.innerWidth;
     if(sessionStorage.getItem('lang') == null){
-      sessionStorage.setItem('lang', this.translate.store.currentLang);
+      sessionStorage.setItem('lang', this.translate.getCurrentLang());
     }
-    this.lang = this.translate.store.currentLang;
-    this.originalLang = this.translate.store.currentLang;
+    this.lang = this.translate.getCurrentLang();
+    this.originalLang = this.translate.getCurrentLang();
   }
 
   async ngOnDestroy() {
@@ -325,6 +339,9 @@ finishDisclaimer() {
     this.submode = 'opt1';
     this.step = 1;
     this.docs = [];
+    this.timeline = [];
+    this.originalEvents = [];
+    this.groupedEvents.set([]);
     this.inheritancePatternImage = null;
     this.summaryPatient = '';
     this.paramForm = null;
@@ -651,113 +668,170 @@ async closeModal() {
   }
 }
 
-// New function that doesn't require a role parameter
-makeSummary() {
+madeSummary(role){
+  this.timeline = [];
+  this.originalEvents = [];
+  this.groupedEvents.set([]);
   this.context = [];
   this.inheritancePatternImage = null; // Reset inheritance pattern image before API call
   let nameFiles = [];
-  for (let doc of this.docs) {
-    if(doc.state == 'done'){
-      if(doc.summary){
-        this.context.push(doc.summary);
-      }else{
-        this.context.push(doc.medicalText);
+    for (let doc of this.docs) {
+      if(doc.state == 'done'){
+        if(doc.summary){
+          this.context.push(doc.summary);
+        }else{
+          this.context.push(doc.medicalText);
+        }
+
+        
+        nameFiles.push(doc.dataFile.name);
       }
-      
-      nameFiles.push(doc.dataFile.name);
+      if(doc.state == 'uploading'){
+        this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
+        return;
+      }
     }
-    if(doc.state == 'uploading'){
-      this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
-      return;
-    }
-  }
-  
-  // No role required - use a unified role
-  this.actualRole = 'unified';
+    
+  this.actualRole = role;
   this.callingSummary = true;
   this.summaryPatient = '';
 
-  if(this.context.length == 0){
-    this.callingSummary = false;
-    this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
-    return;
-  }
-  this.paramForm = this.myuuid+'/results/'+this.makeid(8)
-  var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": this.actualRole, nameFiles: nameFiles, paramForm: this.paramForm };
-  this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
-    .subscribe(async (res: any) => {
-      // Process metadata to determine inheritance pattern image
-      if (res.metadata && res.metadata.genetic_inheritance_pattern) {
-        const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
-        switch (pattern) {
-          case 'autosomal dominant':
-            this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
-            break;
-          case 'autosomal recessive':
-            this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
-            break;
-          case 'X-linked dominant':
-            this.inheritancePatternImage = 'assets/genimg/x-linked_dominant.png';
-            break;
-          case 'X-linked recessive':
-            this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
-            break;
-          default:
-            this.inheritancePatternImage = null;
-        }
-      } else {
-        this.inheritancePatternImage = null;
-      }
-      
-      if(res.result1 != undefined){
-        res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
-        res.result1 = res.result1.replace(/\\n\\n/g, '');
-        res.result1 = res.result1.replace(/\n/g, '');
-        this.translateInverseSummary(res.result1).catch(error => {
-          console.error('Error al procesar el mensaje:', error);
-          this.insightsService.trackException(error);
-        });
-      }else{
-        this.callingSummary = false;
-        this.toastr.error('', this.translate.instant("generics.error try again"));
-      }
-
-    }, (err) => {
+    if(this.context.length == 0){
       this.callingSummary = false;
-      this.inheritancePatternImage = null; // Reset in case of error
-      console.log(err);
-      this.insightsService.trackException(err);
-      this.toastr.error('', this.translate.instant("generics.error try again"));
-    }));
+      this.toastr.error('', this.translate.instant("demo.No documents to summarize"));
+      return;
+    }
+    this.paramForm = this.myuuid+'/results/'+this.makeid(8)
+    var query = { "userId": this.myuuid, "context": this.context, "conversation": this.conversation, "role": role, nameFiles: nameFiles, paramForm: this.paramForm };
+    this.subscription.add(this.http.post(environment.api + '/api/callsummary/', query)
+      .subscribe(async (res: any) => {
+        // Process metadata to determine inheritance pattern image
+        if (res.metadata && res.metadata.genetic_inheritance_pattern) {
+          const pattern = res.metadata.genetic_inheritance_pattern.toLowerCase();
+          switch (pattern) {
+            case 'autosomal dominant':
+              this.inheritancePatternImage = 'assets/genimg/autosomal_dominant.png';
+              break;
+            case 'autosomal recessive':
+              this.inheritancePatternImage = 'assets/genimg/autosomal_recessive.png';
+              break;
+            case 'x-linked dominant':
+              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
+              break;
+            case 'x-linked recessive':
+              this.inheritancePatternImage = 'assets/genimg/x-linked_recessive.png';
+              break;
+            default:
+              this.inheritancePatternImage = null;
+          }
+        } else {
+          this.inheritancePatternImage = null;
+        }
+        
+        if(res.result1 != undefined){
+          res.result1 = res.result1.replace(/^```html\n|\n```$/g, '');
+          res.result1 = res.result1.replace(/\\n\\n/g, '');
+          res.result1 = res.result1.replace(/\n/g, '');
+          this.translateInverseSummary(res.result1).catch(error => {
+            console.error('Error al procesar el mensaje:', error);
+            this.insightsService.trackException(error);
+          });
+        }else{
+          this.callingSummary = false;
+          this.toastr.error('', this.translate.instant("generics.error try again"));
+        }
+        if(res.result2 != undefined){
+          if(res.result2.length > 0){
+            this.timeline = JSON.parse(res.result2);
+            this.originalEvents = this.timeline;
+            this.filterEvents();
+          }          
+        }
+        
+
+      }, (err) => {
+        this.callingSummary = false;
+        this.inheritancePatternImage = null; // Reset in case of error
+        console.log(err);
+        this.insightsService.trackException(err);
+        this.toastr.error('', this.translate.instant("generics.error try again"));
+      }));
 }
 
-// Añadir un método helper para reemplazar marcadores de imágenes
-private replaceImagePlaceholders(text: string): string {
-  let processedText = text;
-  
-  // Reemplazar marcador [IMG33] con imagen de patrón de herencia
-  if (this.inheritancePatternImage && processedText.includes('[IMG33]')) {
-    const imageHtml = `<div class="text-center mb-3">
-                      <img src="${this.inheritancePatternImage}" 
-                           alt="Patrón de herencia genética" 
-                           class="img-fluid" 
-                           style="max-height: 450px; display: block; margin-left: auto; margin-right: auto;"/>
-                      </div>`;
-    processedText = processedText.replace('[IMG33]', imageHtml);
-  }
-  
-  // Reemplazar marcador [IMG22] con imagen de explicación ADN
-  if (processedText.includes('[IMG22]')) {
-    const adnImageHtml = `<div class="text-center mb-3">
-                         <img src="assets/genimg/adn_explanation.png" 
-                              alt="Explicación ADN" 
-                              class="img-fluid" 
-                              style="max-height: 450px; display: block; margin-left: auto; margin-right: auto;"/>
-                         </div>`;
-    processedText = processedText.replace('[IMG22]', adnImageHtml);
-  }
-  
-  return processedText;
+private groupEventsByMonth(events: any[]): any[] {
+  const grouped = {};
+
+  events.forEach(event => {
+    const monthYear = this.getMonthYear(event.date).getTime(); // Usar getTime para agrupar
+    if (!grouped[monthYear]) {
+      grouped[monthYear] = [];
+    }
+    grouped[monthYear].push(event);
+  });
+
+  return Object.keys(grouped).map(key => ({
+    monthYear: new Date(Number(key)), // Convertir la clave de nuevo a fecha
+    events: grouped[key]
+  }));
+}
+
+
+private getMonthYear(dateStr: string): Date {
+  const date = new Date(dateStr);
+  return new Date(date.getFullYear(), date.getMonth(), 1); // Primer día del mes
+}
+
+
+filterEvents() {
+  const startDate = this.startDate() ? new Date(this.startDate()) : null;
+  const endDate = this.endDate() ? new Date(this.endDate()) : null;
+  const selectedEventType = this.selectedEventType();
+
+  const filtered = this.originalEvents.filter(event => {
+    const eventDate = new Date(event.date);
+
+    const isAfterStartDate = !startDate || eventDate >= startDate;
+    const isBeforeEndDate = !endDate || eventDate <= endDate;
+    const isEventTypeMatch = !selectedEventType || selectedEventType=='null' || !event.eventType || event.eventType === selectedEventType;
+
+    return isAfterStartDate && isBeforeEndDate && isEventTypeMatch;
+  });
+
+  this.groupedEvents.set(this.groupEventsByMonth(filtered));
+  this.orderEvents();
+}
+
+resetStartDate() {
+  this.startDate.set(null);
+  this.filterEvents();
+}
+resetEndDate() {
+  this.endDate.set(null);
+  this.filterEvents();
+}
+
+toggleEventOrder() {
+  this.isOldestFirst = !this.isOldestFirst; // Cambia el estado del orden
+  this.orderEvents();
+}
+
+orderEvents() {
+  this.groupedEvents.update(groups => {
+    const sorted = [...groups].sort((a, b) => {
+      const dateA = a.monthYear.getTime();
+      const dateB = b.monthYear.getTime();
+      return this.isOldestFirst ? dateA - dateB : dateB - dateA;
+    });
+
+    sorted.forEach(group => {
+      group.events.sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return this.isOldestFirst ? dateA - dateB : dateB - dateA;
+      });
+    });
+    return sorted;
+  });
 }
 
 async translateInverseSummary(msg): Promise<string> {
@@ -790,8 +864,16 @@ async translateInverseSummary(msg): Promise<string> {
             }
           }).join('');
 
-          // Reemplazar marcadores de imágenes
-          processedText = this.replaceImagePlaceholders(processedText);
+          // Replace [IMAGEN] placeholder with the inheritance pattern image
+          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+            const imageHtml = `<div class="text-center mb-3">
+                               <img src="${this.inheritancePatternImage}" 
+                                    alt="Patrón de herencia genética" 
+                                    class="img-fluid" 
+                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                               </div>`;
+            processedText = processedText.replace('[IMAGEN]', imageHtml);
+          }
 
           this.summaryPatient = processedText;
           this.callingSummary = false;
@@ -803,8 +885,16 @@ async translateInverseSummary(msg): Promise<string> {
           // Process text on error as well
           let processedText = processNonTableContent(msg);
           
-          // Reemplazar marcadores de imágenes
-          processedText = this.replaceImagePlaceholders(processedText);
+          // Replace [IMAGEN] placeholder with the inheritance pattern image
+          if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+            const imageHtml = `<div class="text-center mb-3">
+                               <img src="${this.inheritancePatternImage}" 
+                                    alt="Patrón de herencia genética" 
+                                    class="img-fluid" 
+                                    style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                               </div>`;
+            processedText = processedText.replace('[IMAGEN]', imageHtml);
+          }
           
           this.summaryPatient = processedText;
           this.callingSummary = false;
@@ -814,8 +904,16 @@ async translateInverseSummary(msg): Promise<string> {
       // Process text directly for English
       let processedText = processNonTableContent(msg);
       
-      // Reemplazar marcadores de imágenes
-      processedText = this.replaceImagePlaceholders(processedText);
+      // Replace [IMAGEN] placeholder with the inheritance pattern image
+      if (this.inheritancePatternImage && processedText.includes('[IMAGEN]')) {
+        const imageHtml = `<div class="text-center mb-3">
+                          <img src="${this.inheritancePatternImage}" 
+                                alt="Patrón de herencia genética" 
+                                class="img-fluid" 
+                                style="max-height: 300px; display: block; margin-left: auto; margin-right: auto;"/>
+                          </div>`;
+        processedText = processedText.replace('[IMAGEN]', imageHtml);
+      }
       
       this.summaryPatient = processedText;
       this.callingSummary = false;
@@ -832,38 +930,12 @@ async translateInverseSummary(msg): Promise<string> {
             }
             let url = 'https://davlv9v24on.typeform.com/to/'+questionnaire+'#uuid='+this.paramForm+'&role='+this.actualRole+'&mode='+this.submode
             const qrCodeDataURL = await QRCode.toDataURL(url);
-            
-            // Clonar el contenido HTML para el PDF sin afectar la visualización frontend
-            let pdfContent = this.summaryPatient;
-            
-            // Transformar el contenido para preservar los saltos de línea en el PDF
-            // 1. Convertir etiquetas <br> a formato que preserva saltos de línea en el PDF
-            pdfContent = pdfContent.replace(/<br\s*\/?>/gi, '<br>\n');
-            
-            // 2. Asegurar que cada párrafo tenga espacio adecuado (añadir espacio después de </p>)
-            pdfContent = pdfContent.replace(/<\/p>/gi, '</p>\n\n');
-            
-            // 3. Asegurar espacio después de encabezados
-            pdfContent = pdfContent.replace(/<\/h[1-6]>/gi, match => match + '\n');
-            
-            // 4. Asegurar que cada elemento de lista tenga su propio espacio
-            pdfContent = pdfContent.replace(/<\/li>/gi, '</li>\n');
-            
-            // 5. Eliminar posibles espacios en blanco múltiples
-            pdfContent = pdfContent.replace(/\s{3,}/g, '\n\n');
-            
-            const nonLatinLanguages = [
-              "am", "ar", "hy", "as", "av", "ba", "be", "bn", "bg", "my", "zh-CN", "cv", "ce", "ka", 
-              "el", "gu", "he", "hi", "ja", "kn", "kk", "km", "ko", "ky", "lo", "mk", "ml", "mn", 
-              "ne", "or", "pa", "fa", "ps", "ru", "sa", "si", "sd", "ta", "te", "th", "bo", "tk", 
-              "ug", "uk", "ur", "uz", "vi", "yi"
-            ];
-
-            if (nonLatinLanguages.includes(this.lang)) {
-              await this.jsPDFService.generateResultsPDF(pdfContent, this.translate.store.currentLang, qrCodeDataURL);
-            } else {
-              await this.jsPDFService.generateResultsPDF2(pdfContent, this.translate.store.currentLang, qrCodeDataURL);
-            }
+            console.log(this.summaryPatient)
+            let tempSumary = this.summaryPatient.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
+            this.jsPDFService.generateResultsPDF2(tempSumary, this.translate.getCurrentLang(), qrCodeDataURL)
+            /* let htmldemo={"text":"<div><br>  <h3>Resumen médico</h3><br>  <p>Los documentos que acaba de cargar son historiales médicos y ayudan a explicar su historial de salud, su estado actual y los tratamientos en curso. Este resumen está diseñado para ofrecerle una comprensión clara de su situación médica.</p><br>  <h4>Presentación del paciente</h4><br>  <p>El paciente es Sergio Isla Miranda, un varón de 14 años con un historial de afecciones médicas complejas, principalmente de naturaleza neurológica.</p><br>  <h4>Diagnósticos</h4><br>  <ul><br>    <li><strong>Epilepsia:</strong> Sergio padece epilepsia refractaria, concretamente Síndrome de Dravet, que es una forma grave de epilepsia de difícil tratamiento.</li><br>    <li><strong>Trastornos del desarrollo:</strong> Tiene un trastorno generalizado del desarrollo y un trastorno grave del lenguaje expresivo y comprensivo.</li><br>    <li><strong>Condiciones físicas:</strong> Sergio también tiene los pies muy arqueados (pies cavos), anemia ferropénica y una curvatura de la columna vertebral (escoliosis dorsolumbar).</li><br>  </ul><br>  <h4>Tratamiento y medicación</h4><br>  <ul><br>    <li><strong>Medicación:</strong> Sergio toma varios medicamentos, entre ellos Diacomit, Depakine, Noiafren y Fenfluramina para controlar su epilepsia.</li><br>    <li><strong>Suplementos:</strong> También toma suplementos de hierro para tratar su anemia.</li><br>    <li><strong>Terapias:</strong> Participa en fisioterapia, logopedia y educación física adaptada para favorecer su desarrollo y su salud física.</li><br>  </ul><br>  <h4>Otros</h4><br>  <ul><br>    <li>Sergio ha sufrido estados epilépticos, que son ataques prolongados que requieren atención médica inmediata.</li><br>    <li>Tiene una mutación en el gen SCN1A, que está asociada a su epilepsia.</li><br>    <li>Su plan de tratamiento se sigue de cerca y se ajusta según sea necesario para controlar su enfermedad.</li><br>    <li>Sergio requiere atención y seguimiento continuos debido a la gravedad de su epilepsia, que puede incluir emergencias potencialmente mortales como una parada cardiaca.</li><br>  </ul><br>  <p>Es importante que Sergio y sus cuidadores mantengan una comunicación abierta con los profesionales sanitarios para garantizar el mejor tratamiento posible de su enfermedad.</p><br></div>"};
+            htmldemo.text = htmldemo.text.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
+            this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.getCurrentLang(), qrCodeDataURL)*/
           }
 
           async download2(){
@@ -880,13 +952,13 @@ async translateInverseSummary(msg): Promise<string> {
           ];
       
           if (nonLatinLanguages.includes(this.selectedLanguage.code)) {
-              await this.jsPDFService.generateResultsPDF(this.translatedText, this.translate.store.currentLang, qrCodeDataURL);
+              await this.jsPDFService.generateResultsPDF(this.translatedText, this.translate.getCurrentLang(), qrCodeDataURL);
           } else {
-              await this.jsPDFService.generateResultsPDF2(this.translatedText, this.translate.store.currentLang, qrCodeDataURL);
+              await this.jsPDFService.generateResultsPDF2(this.translatedText, this.translate.getCurrentLang(), qrCodeDataURL);
           }
             /* let htmldemo={"text":"<div><br>  <h3>Resumen médico</h3><br>  <p>Los documentos que acaba de cargar son historiales médicos y ayudan a explicar su historial de salud, su estado actual y los tratamientos en curso. Este resumen está diseñado para ofrecerle una comprensión clara de su situación médica.</p><br>  <h4>Presentación del paciente</h4><br>  <p>El paciente es Sergio Isla Miranda, un varón de 14 años con un historial de afecciones médicas complejas, principalmente de naturaleza neurológica.</p><br>  <h4>Diagnósticos</h4><br>  <ul><br>    <li><strong>Epilepsia:</strong> Sergio padece epilepsia refractaria, concretamente Síndrome de Dravet, que es una forma grave de epilepsia de difícil tratamiento.</li><br>    <li><strong>Trastornos del desarrollo:</strong> Tiene un trastorno generalizado del desarrollo y un trastorno grave del lenguaje expresivo y comprensivo.</li><br>    <li><strong>Condiciones físicas:</strong> Sergio también tiene los pies muy arqueados (pies cavos), anemia ferropénica y una curvatura de la columna vertebral (escoliosis dorsolumbar).</li><br>  </ul><br>  <h4>Tratamiento y medicación</h4><br>  <ul><br>    <li><strong>Medicación:</strong> Sergio toma varios medicamentos, entre ellos Diacomit, Depakine, Noiafren y Fenfluramina para controlar su epilepsia.</li><br>    <li><strong>Suplementos:</strong> También toma suplementos de hierro para tratar su anemia.</li><br>    <li><strong>Terapias:</strong> Participa en fisioterapia, logopedia y educación física adaptada para favorecer su desarrollo y su salud física.</li><br>  </ul><br>  <h4>Otros</h4><br>  <ul><br>    <li>Sergio ha sufrido estados epilépticos, que son ataques prolongados que requieren atención médica inmediata.</li><br>    <li>Tiene una mutación en el gen SCN1A, que está asociada a su epilepsia.</li><br>    <li>Su plan de tratamiento se sigue de cerca y se ajusta según sea necesario para controlar su enfermedad.</li><br>    <li>Sergio requiere atención y seguimiento continuos debido a la gravedad de su epilepsia, que puede incluir emergencias potencialmente mortales como una parada cardiaca.</li><br>  </ul><br>  <p>Es importante que Sergio y sus cuidadores mantengan una comunicación abierta con los profesionales sanitarios para garantizar el mejor tratamiento posible de su enfermedad.</p><br></div>"};
             htmldemo.text = htmldemo.text.replace(/<br\s*\/?>/gi, '').replace(/\s{2,}/g, ' ');
-            this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.store.currentLang, qrCodeDataURL)*/
+            this.jsPDFService.generateResultsPDF(htmldemo.text, this.translate.getCurrentLang(), qrCodeDataURL)*/
           }
 
           openFeedback(){
@@ -895,7 +967,7 @@ async translateInverseSummary(msg): Promise<string> {
           }
 
           newSummary(){
-    this.summaryPatient = '';
+            this.summaryPatient = '';
           }
 
           getLiteral(literal) {
@@ -904,7 +976,7 @@ async translateInverseSummary(msg): Promise<string> {
 
         showPanelMedium(content) {
           this.medicalText = '';
-    this.summaryDx29 = '';
+          this.summaryDx29 = '';
           if (this.modalReference != undefined) {
               this.modalReference.close();
           }
@@ -1082,6 +1154,10 @@ async translateInverseSummary(msg): Promise<string> {
           }
         }
 
+        toggleFilters() {
+          this.showFilters = !this.showFilters;
+        }
+
         useSampleText() {
           
           this.medicalText = `Paciente: Juan Pérez
@@ -1180,7 +1256,7 @@ async translateInverseSummary(msg): Promise<string> {
       
       if(testLangText == ''){
         this.subscription.add(this.apiDx29ServerService.getDetectLanguage(testLangText)
-      .subscribe((res: any) => {
+        .subscribe((res: any) => {
           let jsontestLangText = [{ "Text": processedText }]
           this.subscription.add(this.apiDx29ServerService.getTranslationSegmentsInvert(res[0].language, this.selectedLanguage.code,jsontestLangText)
           .subscribe((res2: any) => {

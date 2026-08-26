@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, effect } from '@angular/core';
 import { HROUTES } from './navigation-routes.config';
 import { ConfigService } from '../services/config.service';
 import { Subscription } from 'rxjs';
@@ -7,7 +7,8 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-horizontal-menu',
   templateUrl: './horizontal-menu.component.html',
-  styleUrls: ['./horizontal-menu.component.scss']
+  styleUrls: ['./horizontal-menu.component.scss'],
+  standalone: false
 })
 export class HorizontalMenuComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -19,9 +20,12 @@ export class HorizontalMenuComponent implements OnInit, AfterViewInit, OnDestroy
 
   layoutSub: Subscription;
 
-  constructor(private configService: ConfigService,
-    private cdr: ChangeDetectorRef) {
-    this.config = this.configService.templateConf;
+  constructor(private configService: ConfigService) {
+    this.config = this.configService.templateConf();
+    effect(() => {
+      this.config = this.configService.templateConf();
+      this.loadLayout();
+    });
   }
 
   ngOnInit() {
@@ -29,15 +33,6 @@ export class HorizontalMenuComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngAfterViewInit() {
-
-    this.layoutSub = this.configService.templateConf$.subscribe((templateConf) => {
-      if (templateConf) {
-        this.config = templateConf;
-      }
-      this.loadLayout();
-      this.cdr.markForCheck();
-
-    })
   }
 
   loadLayout() {

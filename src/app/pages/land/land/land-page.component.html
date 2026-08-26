@@ -1,6 +1,6 @@
 <div *ngIf="mode=='1'" [@testani]="mode">
     <div class="col-md-12">
-        <div *ngIf="docs.length == 0" class="mt-3">
+        <div *ngIf="docs().length == 0" class="mt-3">
             <div class="offset-md-3 col-md-6 center-elements mt-5 mb-4">
                 <h1 class="text-center text-bold-700">{{'demo.t1' | translate }}</h1>
                 <p>{{'demo.des' | translate }}</p>
@@ -44,14 +44,14 @@
                 <a href="javascript:;" (click)="showPolicy()" class="policy-link">{{'disclaimer.t2' | translate }}</a>
             </div>
         </div>
-        <div *ngIf="docs.length > 0">
-            <div *ngIf="!loadedDocs">
+        <div *ngIf="docs().length > 0">
+            <div *ngIf="!loadedDocs()">
                 <div class="mt-4 mx-auto center-elements" style="max-width: 40rem !important;">
                     <em class="fa fa-spinner fa-spin fa-3x fa-fw info"></em>
                     <p>{{'generics.Please wait' | translate }}</p>
                 </div>
             </div>
-            <div *ngIf="loadedDocs">
+            <div *ngIf="loadedDocs()">
 
                 <div class="mt-4 col-md-12">
                     <div class="col-md-12 mb-3 center-elements">
@@ -61,17 +61,17 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-5">
-                            <div class="card" *ngIf="docs.length > 0">
+                            <div class="card" *ngIf="docs().length > 0">
                                 <!--<div class="card-content">
                                     <div class="card-body py-0">
                                         <div class="media pb-1">
                                             <div class="media-body text-left">
-                                                <span *ngIf="loadedDocs">
-                                                    <h3 class="font-large-1 mb-0" *ngIf="docs.length>0">
-                                                        {{docs.length}}</h3>
-                                                    <h3 class="font-large-1 mb-0" *ngIf="docs.length==0">0</h3>
+                                                <span *ngIf="loadedDocs()">
+                                                    <h3 class="font-large-1 mb-0" *ngIf="docs().length>0">
+                                                        {{docs().length}}</h3>
+                                                    <h3 class="font-large-1 mb-0" *ngIf="docs().length==0">0</h3>
                                                 </span>
-                                                <span *ngIf="!loadedDocs">
+                                                <span *ngIf="!loadedDocs()">
                                                     <em class="fa fa-spinner fa-spin fa-fw primary"></em>
                                                 </span>
                                                 <span>{{'home.s1.1' | translate }}</span>
@@ -84,7 +84,7 @@
                                 </div>-->
                                 <div>
                                     <hr class="mt-0 mb-0">
-                                    <div *ngFor="let doc of docs; let i = index " class="">
+                                    <div *ngFor="let doc of docs(); let i = index " class="">
                                         <div class="card-body border-bottom"
                                             [ngClass]="{'panelHearder': innerWidth>992}">
                                             <span class="text-left">
@@ -153,16 +153,16 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="p-2" *ngIf="totalTokens>1000 && tokensCalculated">
+                                    <div class="p-2" *ngIf="totalTokens()>1000 && tokensCalculated()">
                                         <div class="progress">
                                             <div class="progress-bar" role="progressbar"
-                                                [style.width]="(totalTokens / TOKENS_LIMIT) * 100 + '%'"
-                                                [attr.aria-valuenow]="totalTokens" aria-valuemin="0"
+                                                [style.width]="(totalTokens() / TOKENS_LIMIT) * 100 + '%'"
+                                                [attr.aria-valuenow]="totalTokens()" aria-valuemin="0"
                                                 aria-valuemax="TOKENS_LIMIT">
                                             </div>
                                         </div>
-                                        <p> {{totalTokens | tokens}} / {{TOKENS_LIMIT |tokens}}</p>
-                                        <p *ngIf="totalTokens>TOKENS_LIMIT" class="danger"> {{'demo.Tokens limit
+                                        <p> {{totalTokens() | tokens}} / {{TOKENS_LIMIT |tokens}}</p>
+                                        <p *ngIf="totalTokens()>TOKENS_LIMIT" class="danger"> {{'demo.Tokens limit
                                             exceeded' | translate }}</p>
                                     </div>
 
@@ -206,7 +206,7 @@
 
                                     </div>
                                     <!--<button class="mt-3 btn btn-primary" style="padding: 0.2rem 0.57rem;" 
-                                    [disabled]="callingOpenai" (click)="openFileInput(fileDropRef2)" aria-label="new file">
+                                    [disabled]="callingOpenai()" (click)="openFileInput(fileDropRef2)" aria-label="new file">
                                     <em class="fa fa-paperclip fa-rotate-180 h-4 w-auto" width="1em" height="1em" fill="currentColor"></em> {{'demo.Add new reports' | translate }}
                                     </button>
                                     <p class="mt-2 d-block">{{'demo.Accepted files' | translate }}</p>
@@ -215,16 +215,16 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-7" *ngIf="docs.length>0">
+                        <div class="col-lg-7" *ngIf="docs().length>0">
                             <div class="card card-body">
-                                <div class="row" *ngIf="callingSummary">
+                                <div class="row" *ngIf="callingSummary()">
                                     <div class="col-md-12">
                                         <span class="d-block mt-2 center-elements"><em
                                                 class="fa fa-spinner fa-spin fa-3x fa-fw info"></em></span>
                                         <p class="text-center mt-2">{{'generics.Please wait' | translate }}</p>
                                     </div>
                                 </div>
-                                <div class="row" *ngIf="!callingSummary && summaryPatient==''">
+                                <div class="row" *ngIf="!callingSummary() && summaryPatient()==''">
                                     <div class="col-md-12">
                                         <p class="text-bold-700 text-center">{{'demo.I want a summary for' | translate
                                             }}</p>
@@ -246,7 +246,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row" *ngIf="!callingSummary && summaryPatient!=''">
+                                <div class="row" *ngIf="!callingSummary() && summaryPatient()!=''">
                                     <div class="center-elements">
                                         <div class="d-block mt-2">
                                             <div class="center-elements">
@@ -261,7 +261,7 @@
                                                 (click)="download()">{{'generics.ExportData' | translate }}</button>
                                             </div>
                                             <div class="custom-body text-left p-2">
-                                                <span [innerHTML]="summaryPatient | safe: 'html'"></span>
+                                                <span [innerHTML]="summaryPatient() | safe: 'html'"></span>
                                             </div>
                                         </div>
                                     </div>
@@ -452,7 +452,7 @@
                         <video #videoElement id="videoElement" class="w-100" autoplay></video>
                     </div>
                     <div class="col-sm-12" *ngIf="stepPhoto==2">
-                        <img *ngIf="capturedImage" class="w-100" [src]="capturedImage" />
+                        <img *ngIf="capturedImage()" class="w-100" [src]="capturedImage()" />
                     </div>
                 </div>
             </div>
@@ -488,15 +488,15 @@
                 </span>
                 <div class="voice-recorder" *ngIf="supported" style="margin-bottom: 20px;">
                     <div class="card-body border round p-3 mic-icon pointer bg-white" (click)="toggleRecording()">
-                        <span *ngIf="!recording" class="d-block">{{'voice.Start Voice Recognition' | translate }}</span>
-                        <i class="mt-2 fa-2x fa fa-microphone" *ngIf="!recording"></i>
-                        <span *ngIf="recording" class="d-block">{{'voice.Stop Voice Recognition' | translate }}</span>
-                        <i class="mt-2 fa-2x fa fa-stop danger" *ngIf="recording"></i>
-                        <div *ngIf="recording" class="d-block recording-indicator">
+                        <span *ngIf="!recording()" class="d-block">{{'voice.Start Voice Recognition' | translate }}</span>
+                        <i class="mt-2 fa-2x fa fa-microphone" *ngIf="!recording()"></i>
+                        <span *ngIf="recording()" class="d-block">{{'voice.Stop Voice Recognition' | translate }}</span>
+                        <i class="mt-2 fa-2x fa fa-stop danger" *ngIf="recording()"></i>
+                        <div *ngIf="recording()" class="d-block recording-indicator">
                             <i class="fa fa-circle record-icon"></i> {{'voice.Recording' | translate }}...
                         </div>
-                        <div *ngIf="recording" class="d-block">
-                            <p>{{ timerDisplay }}</p>
+                        <div *ngIf="recording()" class="d-block">
+                            <p>{{ timerDisplay() }}</p>
                         </div>
                     </div>
 
@@ -504,11 +504,11 @@
                 <div class="row">
                     <div class="col-md-12 center-elements">
                         <textarea #inputTextArea class="form-control data-hj-allow" style="height:320px;"
-                            [(ngModel)]="medicalText" name="medicalText"
+                            [ngModel]="medicalText()" (ngModelChange)="medicalText.set($event)" name="medicalText"
                             placeholder="{{'summaryDx.placeholder' | translate }}"></textarea>
                             <button class="mt-2 mr-1 btn btn-sm btn-secondary" (click)="useSampleText()">{{'demo.Use example text' | translate }}</button>
                         <button type="button" class="ml-1 mt-2 btn btn-sm btn-primary"
-                            [disabled]="callingSummary || recording || medicalText.length==0"
+                            [disabled]="callingSummary() || recording() || medicalText().length==0"
                             title="{{'summaryDx.Generate summary' | translate }}" (click)="createFile();">
                             <span>{{'demo.Create report' | translate }}</span>
 
@@ -526,7 +526,7 @@
         <div class="content-header text-left">
             <h4 class="mb-0">{{'generics.Translate' | translate }}</h4>
         </div>
-        <button type="button" class="close" aria-label="Close" (click)="closeModal();">
+        <button type="button" class="close" aria-label="Close" (click)="closeModalTranslate();">
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
@@ -536,26 +536,26 @@
             <div class="col-md-6">
                 <h5>{{'demo.Original Text' | translate }}</h5>
                 <div class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
-                    <span [innerHTML]="summaryPatient | safe: 'html'"></span>
+                    <span [innerHTML]="summaryPatient() | safe: 'html'"></span>
                 </div>
             </div>
-            <div class="col-md-6" *ngIf="translatedText !='' ">
+            <div class="col-md-6" *ngIf="translatedText() !='' ">
                 <h5>{{'demo.Translated Text' | translate }}</h5>
-                <div *ngIf="!callingTranslate" class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
-                    <span id="pdf-content" [innerHTML]="translatedText | safe: 'html'"></span>
+                <div *ngIf="!callingTranslate()" class="border p-2" style="min-height: 150px; max-height: 60vh;overflow-y: auto;">
+                    <span id="pdf-content" [innerHTML]="translatedText() | safe: 'html'"></span>
                 </div>
-                <span *ngIf="!callingTranslate" class="float-right pt-2">
+                <span *ngIf="!callingTranslate()" class="float-right pt-2">
                     <button class="btn btn-primary btn-sm ml-1" (click)="changeLanguage()">{{'demo.Change language' | translate }}</button>
                     <button class="btn btn-primary btn-sm ml-1" (click)="download2()">{{'generics.ExportData' | translate }}</button>
                 </span>
                 
             </div>
-            <div class="col-md-6" *ngIf="translatedText =='' ">
-                <div *ngIf="!callingTranslate">
+            <div class="col-md-6" *ngIf="translatedText() =='' ">
+                <div *ngIf="!callingTranslate()">
                     <div class="form-group">
                         <label for="languageSelect">{{'demo.Select Language' | translate }}</label>
                         <select id="languageSelect" class="form-control" [(ngModel)]="selectedLanguage">
-                            <option *ngFor="let lang of allLangs" [ngValue]="lang">
+                            <option *ngFor="let lang of allLangs()" [ngValue]="lang">
                                 {{ lang.name }} ({{ lang.nativeName }})
                             </option>
                         </select>
@@ -563,7 +563,7 @@
                     <button type="button" class="btn btn-primary mr-1" (click)="translateText();">{{'generics.Translate' | translate }}</button>
                     <button type="button" class="btn btn-primary ml-1" (click)="translateTextIA();">{{'generics.Translate' | translate }} (IA)</button>
                 </div>
-                <div *ngIf="callingTranslate" class="row">
+                <div *ngIf="callingTranslate()" class="row">
                     <span class="col-md-12 center-elements">
                         <em class="fa fa-spinner fa-spin fa-3x fa-fw info"></em>
                         <p>{{'generics.Please wait' | translate }}</p>

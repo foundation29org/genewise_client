@@ -427,6 +427,12 @@ mark{
     max-width: 45% !important;
   }
 
+  /* ng-bootstrap 21 sets inline z-index:1055 on the backdrop (Bootstrap 5).
+     Bootstrap 4 .modal is 1050, so the backdrop paints over the dialog. */
+  ngb-modal-backdrop.modal-backdrop {
+    z-index: 1040 !important;
+  }
+
   @media ( max-width: 991px ){
     .width30rem{
       max-width: 30rem !important;

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
 import { environment } from 'environments/environment';
+import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators'
 import { InsightsService } from 'app/shared/services/azureInsights.service';
 
@@ -17,7 +18,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -31,7 +32,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -45,7 +46,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -59,7 +60,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -73,7 +74,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -87,7 +88,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -101,7 +102,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -115,7 +116,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -129,7 +130,7 @@ export class ApiDx29ServerService {
         catchError((err) => {
           console.log(err);
           this.insightsService.trackException(err);
-          return err;
+          return throwError(() => err);
         })
       );
     }
@@ -143,7 +144,7 @@ export class ApiDx29ServerService {
           catchError((err) => {
             console.log(err);
             this.insightsService.trackException(err);
-            return err;
+            return throwError(() => err);
           })
         );
       }
@@ -157,7 +158,7 @@ export class ApiDx29ServerService {
           catchError((err) => {
             console.log(err);
             this.insightsService.trackException(err);
-            return err;
+            return throwError(() => err);
           })
         );
       }

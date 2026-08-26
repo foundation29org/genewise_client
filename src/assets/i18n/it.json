@@ -22,7 +22,9 @@
       "a physician": "Un medico",
       "Summarise the transcript": "Riassumi la trascrizione",
       "Written for": "Scritto per",
-      "Generate summary": "Genera riepilogo",
+      "Adults": "Adulti",
+      "Adolescents": "Adolescenti",
+      "Children": "Bambini",
       "New summary": "Nuovo riepilogo",
       "Evaluate summary": "Valuta il riepilogo",
       "No documents to summarize": "Non ci sono documenti da riassumere, oppure non hai finito di estrarre il testo.",
@@ -588,7 +590,7 @@
        "Welcome to dx29":"Benvenuto su Nav29",
        "Please enter the basic data":"Aggiungi informazioni sulla tua condizione e sui sintomi.",
        "Change":"Modificare",
-       "Exemption of liability":"Esenzione di responsabilità",
+       "Foundation 29":"Fondazione 29",
        "Copied to the clipboard":"Copiato negli appunti",
        "Contact us!":"Contattaci!",
        "Resend":"Rinviare",
@@ -1358,8 +1360,7 @@
     },
     "pdf":{
       "page": "Pagina",
-      "Scan to rate the summary": "Scansiona per valutare il riepilogo",
-      "reportTitle": "Rapporto di consulenza genetica: analisi del rapporto genetico"
+      "Scan to rate the summary": "Scansiona per valutare il riepilogo"
     },
     "open":{
        "Public sharing":"Condividere",

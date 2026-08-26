@@ -22,7 +22,9 @@
     "a physician": "A physician",
     "Summarise the transcript": "Summarise the transcript",
     "Written for": "Written for",
-    "Generate summary": "Generate summary",
+    "Adults": "Adults",
+    "Adolescents": "Adolescents",
+    "Children": "Children",
     "New summary": "New summary",
     "Evaluate summary": "Evaluate summary",
     "No documents to summarize": "There are no documents to summarize, or you have not finished extracting the text.",
@@ -588,7 +590,7 @@
     "Welcome to dx29": "Welcome to Nav29",
     "Please enter the basic data": "Add information about your condition and symptoms.",
     "Change": "Change",
-    "Exemption of liability": "Exemption of liability",
+    "Foundation 29": "Foundation 29",
     "Copied to the clipboard": "Copied to the clipboard",
     "Contact us!": "Contact us!",
     "Resend": "Resend",
@@ -1362,8 +1364,7 @@
   },
   "pdf":{
     "page": "Page",
-    "Scan to rate the summary": "Scan to rate the summary",
-    "reportTitle": "Genetic counselling report: genetic report analysis"
+    "Scan to rate the summary": "Scan to rate the summary"
   },
   "open":{
     "Public sharing": "Share",

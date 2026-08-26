@@ -7,7 +7,8 @@ import {
   } from '@angular/core';
   
   @Directive({
-    selector: '[appDnd]'
+    selector: '[appDnd]',
+    standalone: false
   })
   export class DndDirective {
     @HostBinding('class.fileover') fileOver: boolean;

@@ -9,26 +9,24 @@
       "projectType": "application",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular/build:application",
           "options": {
             "allowedCommonJsDependencies": [
-              "dragula",
-              "@mattlewis92/dom-autoscroller",
-              "prismjs/plugins/copy-to-clipboard/prism-copy-to-clipboard",
-              "lodash",
-              "css-element-queries",
-              "quill",
-              "hopscotch",
-              "moment",
               "sweetalert2",
-              "clipboard",
-              "prismjs"
+              "qrcode",
+              "jspdf",
+              "uuid"
             ],
-            "outputPath": "dist",
+            "outputPath": {
+              "base": "dist",
+              "browser": ""
+            },
             "index": "src/index.html",
-            "main": "src/main.ts",
+            "browser": "src/main.ts",
             "tsConfig": "src/tsconfig.app.json",
-            "polyfills": "src/polyfills.ts",
+            "polyfills": [
+              "src/polyfills.ts"
+            ],
             "assets": [
               "src/assets",
               "src/favicon.ico",
@@ -36,16 +34,13 @@
               "src/robots.txt"
             ],
             "styles": [
-              "node_modules/sweetalert2/dist/sweetalert2.min.css",
-              "node_modules/perfect-scrollbar/css/perfect-scrollbar.css",
-              "node_modules/prismjs/plugins/toolbar/prism-toolbar.css",
+              "node_modules/@angular/material/prebuilt-themes/azure-blue.css",
+              "node_modules/ngx-toastr/toastr.css",
               "src/assets/css/wizard.css",
               "src/assets/css/quill.snow.css",
               "src/assets/css/quill.bubble.css",
               "src/assets/css/hopscotch.css",
               "src/assets/css/animate.min.css",
-              "node_modules/dragula/dist/dragula.css",
-              "node_modules/ngx-toastr/toastr.css",
               "src/assets/sass/core.scss",
               "src/styles.css",
               "src/assets/css/custom.css"
@@ -53,12 +48,14 @@
             "scripts": [
               "src/assets/vendor/pace/pace.min.js"
             ],
-            "vendorChunk": true,
-            "extractLicenses": false,
-            "buildOptimizer": false,
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "src/assets/sass",
+                "node_modules"
+              ]
+            },
             "sourceMap": true,
-            "optimization": false,
-            "namedChunks": true
+            "optimization": false
           },
           "configurations": {
             "production": {
@@ -71,10 +68,6 @@
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
-              "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -92,10 +85,6 @@
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
-              "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -113,10 +102,6 @@
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
-              "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -127,88 +112,24 @@
           }
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "options": {
-            "browserTarget": "matngular:build"
+            "buildTarget": "matngular:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "matngular:build:production"
+              "buildTarget": "matngular:build:production"
+            },
+            "develop": {
+              "buildTarget": "matngular:build:develop"
+            },
+            "staging": {
+              "buildTarget": "matngular:build:staging"
             }
           }
         },
         "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
-          "options": {
-            "browserTarget": "matngular:build"
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "main": "src/test.ts",
-            "karmaConfig": "./karma.conf.js",
-            "polyfills": "src/polyfills.ts",
-            "tsConfig": "src/tsconfig.spec.json",
-            "scripts": [
-              "src/assets/vendor/pace/pace.min.js"
-            ],
-            "styles": [
-              "node_modules/sweetalert2/dist/sweetalert2.min.css",
-              "src/assets/css/wizard.css",
-              "src/assets/css/quill.snow.css",
-              "src/assets/css/quill.bubble.css",
-              "src/assets/css/hopscotch.css",
-              "node_modules/dragula/dist/dragula.css",
-              "node_modules/ngx-toastr/toastr.css",
-              "src/styles.css",
-              "src/assets/css/custom.css"
-            ],
-            "assets": [
-              "src/assets",
-              "src/favicon.ico"
-            ]
-          },
-          "configurations": {
-            "production": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.prod.ts"
-                }
-              ]
-            },
-            "staging": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.staging.ts"
-                }
-              ]
-            },
-            "develop":{
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.dev.ts"
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    "matngular-e2e": {
-      "root": "",
-      "sourceRoot": "",
-      "projectType": "application",
-      "architect": {
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "./protractor.conf.js",
-            "devServerTarget": "matngular:serve"
-          }
+          "builder": "@angular/build:extract-i18n"
         }
       }
     }
@@ -216,10 +137,15 @@
   "schematics": {
     "@schematics/angular:component": {
       "prefix": "app",
-      "style": "scss"
+      "style": "scss",
+      "standalone": false
     },
     "@schematics/angular:directive": {
-      "prefix": "app"
+      "prefix": "app",
+      "standalone": false
+    },
+    "@schematics/angular:pipe": {
+      "standalone": false
     }
   },
   "cli": {
